@@ -1,0 +1,68 @@
+# The dsh-whale-pet bundle layer.
+#
+# One host row: the plugin starts the pet bridge, registers the PC-control and
+# pet-control tools, and launches the desktop-pet window. Everything the row
+# needs is spelled out here because a later patch layer replaces a row's whole
+# `config` rather than merging into it — copy this block into the profile's own
+# `cordis.patch.yml` and edit the values you care about.
+- insert:
+    - id: whale-pet
+      name: 'dsh-whale-pet'
+      config:
+        # Master switch. `false` keeps the package installed but inert.
+        enabled: true
+        # Loopback port for the pet bridge. `0` lets the OS pick one; if the
+        # configured port is busy the plugin falls back to a free one and logs it.
+        port: 4571
+        # Shared secret for the bridge API. Empty mints a fresh token per boot.
+        token: ''
+        # Start the pet window together with DSH.
+        autoLaunch: true
+        # Absolute path of a custom launcher; empty uses the bundled one.
+        launcher: ''
+        launcherArgs: []
+        # Stop the window when the plugin unloads.
+        stopOnUnload: true
+        # Debug logging (bridge traffic, forwarded events).
+        debug: false
+        window:
+          width: 320
+          height: 420
+          margin: 24
+          corner: bottom-right
+          alwaysOnTop: true
+          opacity: 1
+          startHidden: false
+        voice:
+          enabled: true
+          lang: zh-CN
+          voice: ''
+          rate: 1.05
+          pitch: 1.25
+          volume: 1
+          maxChars: 240
+          speakReplies: true
+        asr:
+          enabled: true
+          lang: zh-CN
+          engine: auto
+          maxSeconds: 20
+        session:
+          # active: follow the conversation that is actually running.
+          # pinned: always talk to `id`. none: never send.
+          mode: active
+          id: ''
+        # Ask before running a tool class. Off by default: the pet acts for its owner.
+        approval:
+          input: false
+          media: false
+          notify: false
+          window: false
+        tools:
+          media: true
+          input: true
+          notify: true
+          look: true
+          control: true
+          say: true
+        helperTimeoutMs: 20000

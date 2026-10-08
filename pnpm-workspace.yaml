@@ -1,0 +1,5 @@
+# pnpm settings for the whale-pet project.
+# Electron ships a postinstall script that downloads its prebuilt binary; pnpm
+# blocks dependency build scripts by default, so it is allowed explicitly here.
+onlyBuiltDependencies:
+  - electron

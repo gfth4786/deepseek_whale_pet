@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'none'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; media-src 'self' blob:">
+  <title>DeepSeek 鲸鱼娘</title>
+  <link rel="stylesheet" href="/pet/pet.css">
+</head>
+
+<body>
+  <!-- The plugin injects the bridge token and the current state here at serve time. -->
+  <!--WHALE_PET_BOOT-->
+
+  <main id="app" data-mood="idle" data-state="booting" aria-live="polite">
+    <section id="bubble" class="bubble" hidden>
+      <p class="bubble__text" id="bubble-text"></p>
+      <p class="bubble__meta" id="bubble-meta"></p>
+    </section>
+
+    <div id="stage" class="stage" title="点一下说话，右键更多">
+      <div id="character" class="character" role="img" aria-label="DeepSeek 鲸鱼娘"></div>
+      <div id="busy" class="busy" hidden>
+        <span class="busy__dot"></span>
+        <span class="busy__dot"></span>
+        <span class="busy__dot"></span>
+        <span class="busy__label" id="busy-label">思考中</span>
+      </div>
+      <div id="hint" class="hint" hidden></div>
+    </div>
+
+    <form id="composer" class="composer" hidden>
+      <button type="button" id="mic" class="composer__mic" title="点击后说话（语音输入）" aria-label="语音输入">🎙</button>
+      <input id="input" class="composer__input" type="text" placeholder="和鲸鱼娘说点什么…" autocomplete="off"
+        spellcheck="false">
+      <button type="submit" id="send" class="composer__send" title="发送（回车）" aria-label="发送">➤</button>
+    </form>
+
+    <nav id="menu" class="menu" hidden>
+      <button type="button" data-action="composer">显示输入框</button>
+      <button type="button" data-action="mute">静音朗读</button>
+      <button type="button" data-action="topmost">取消总在最前</button>
+      <button type="button" data-action="speak-last">重念上一句</button>
+      <button type="button" data-action="hide">隐藏窗口</button>
+      <button type="button" data-action="quit" class="menu__danger">退出桌宠</button>
+    </nav>
+
+    <div id="toast" class="toast" hidden></div>
+  </main>
+
+  <script src="/pet/pet.js" type="module"></script>
+</body>
+
+</html>

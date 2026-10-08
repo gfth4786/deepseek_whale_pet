@@ -1,0 +1,38 @@
+{
+  "name": "dsh-whale-pet",
+  "version": "0.1.0",
+  "private": true,
+  "description": "DeepSeek 鲸鱼娘桌宠：独立置顶桌面窗口 + 语音能力 + 电脑操作工具（DSH 插件）",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "src",
+    "pet",
+    "scripts",
+    "docs",
+    "cordis.patch.yml",
+    "README.md"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "scripts": {
+    "test": "node --test",
+    "pet": "node scripts/launch-pet.mjs",
+    "selftest": "node scripts/selftest-window.mjs"
+  },
+  "devDependencies": {
+    "electron": "44.0.0"
+  },
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0"
+  },
+  "license": "MIT"
+}

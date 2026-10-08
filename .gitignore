@@ -1,0 +1,15 @@
+# Dependencies and build leftovers.
+node_modules/
+.electron-cache/
+*.log
+
+# Test and self-test artifacts (the shipped window screenshot is committed on
+# purpose: the README links to it).
+tests/artifacts/*
+!tests/artifacts/pet-window.png
+
+# Editor and OS noise.
+.idea/
+.vscode/
+Thumbs.db
+Desktop.ini

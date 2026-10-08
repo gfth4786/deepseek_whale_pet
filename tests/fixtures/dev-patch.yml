@@ -1,0 +1,20 @@
+# Development overlay: load the whale-pet plugin straight from this working copy.
+#
+#   cd <deepseek-harness checkout>
+#   pnpm dsh web --patch <this file> --port 3081 --no-open
+#
+# The row names the plugin's entry module by absolute path, so the plugin runs
+# without being installed into a profile. `autoLaunch` is on, exactly as in a
+# real profile: the DSH process starts the pet window and owns its lifetime.
+# For a headless check, start the server with `DSH_WHALE_PET_AUTOLAUNCH=0`.
+- insert:
+    - id: whale-pet-dev
+      name: 'F:/project/dsh-plugin/whale-pet/index.js'
+      config:
+        autoLaunch: true
+        port: 4599
+        # A fixed token so a manually launched window (and the health probes in
+        # the development notes) can reach the bridge. Never do this in a real
+        # profile: the default is a fresh random token per boot.
+        token: 'whale-pet-dev-token'
+        debug: true

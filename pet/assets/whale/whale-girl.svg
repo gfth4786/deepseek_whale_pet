@@ -1,0 +1,210 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="100%" height="100%">
+  <g id="whale-root">
+    <g id="whale-shadow">
+      <ellipse cx="150" cy="278" rx="56" ry="7.5" fill="#00000022"/>
+      <ellipse cx="150" cy="276.5" rx="36" ry="4.4" fill="#00000022"/>
+    </g>
+
+    <g id="whale-tail">
+      <path d="M186 226 C200 226 214 229 226 234 C219 228 217 222 219 216 C221 210 227 206 235 205 C245 203 254 205 260 210 C250 211 243 215 240 222 C237 229 239 236 246 241 C236 239 227 236 218 237 C208 238 198 240 190 244 C188 241 187 233 187 229 C187 227 186 227 186 226 Z" fill="#4D6BFE" stroke="#1B2559" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M214 216 C217 210 223 207 230 206 C236 205 244 206 249 209 C242 210 236 213 233 217 C227 216 220 215 214 216 Z" fill="#6B8CFF"/>
+      <path d="M186 242 C194 238 203 235 212 234 C206 233 200 233 193 235 C188 237 186 240 186 242 Z" fill="#3A55D9"/>
+      <path d="M237 236 C234 232 232 227 233 221" fill="none" stroke="#1B2559" stroke-width="2" stroke-linecap="round" opacity="0.35"/>
+    </g>
+
+    <g id="whale-body">
+      <path d="M150 148 C162 148 173 152 180 159 C188 167 192 179 192 192 C192 205 188 217 181 227 C174 236 164 240 150 240 C136 240 126 236 119 227 C112 217 108 205 108 192 C108 179 112 167 120 159 C127 152 138 148 150 148 Z" fill="#DCE6FF" stroke="#1B2559" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M126 152 C134 164 142 172 150 172 C158 172 166 164 174 152 C168 149 159 148 150 148 C141 148 132 149 126 152 Z" fill="#FFFFFF" stroke="#1B2559" stroke-width="2.6" stroke-linejoin="round"/>
+      <path d="M150 178 C161 178 170 183 174 191 C178 199 177 209 171 216 C166 222 158 226 150 226 C142 226 134 222 129 216 C123 209 122 199 126 191 C130 183 139 178 150 178 Z" fill="#FFFFFF" stroke="#1B2559" stroke-width="2.6" stroke-linejoin="round"/>
+      <path d="M134 188 C131 194 130 201 132 208 C134 214 138 219 143 222 C138 217 135 211 134 204 C133 198 133 192 134 188 Z" fill="#DCE6FF"/>
+      <path d="M120 166 C115 174 112 183 112 192 C112 200 114 208 117 215 C112 206 110 196 111 186 C112 178 115 171 120 166 Z" fill="#B9C8F0"/>
+      <path d="M180 166 C185 174 188 183 188 192 C188 200 186 208 183 215 C188 206 190 196 189 186 C188 178 185 171 180 166 Z" fill="#B9C8F0"/>
+      <rect x="133" y="226" width="12" height="38" rx="6" fill="#DCE6FF" stroke="#1B2559" stroke-width="3"/>
+      <rect x="155" y="226" width="12" height="38" rx="6" fill="#DCE6FF" stroke="#1B2559" stroke-width="3"/>
+      <path d="M133 252 C133 259 136 263 139 263 C143 263 146 259 146 252 L146 248 L133 248 Z" fill="#3A55D9" stroke="#1B2559" stroke-width="2.4" stroke-linejoin="round"/>
+      <path d="M155 252 C155 259 158 263 161 263 C165 263 168 259 168 252 L168 248 L155 248 Z" fill="#3A55D9" stroke="#1B2559" stroke-width="2.4" stroke-linejoin="round"/>
+      <path d="M108 214 C106 221 105 227 105 232 C110 235 116 236 121 236 C115 231 111 224 108 214 Z" fill="#B9C8F0" opacity="0.7"/>
+    </g>
+
+    <g id="whale-hair-back">
+      <path d="M150 26 C115 26 95 52 95 92 C92 120 89 156 88 190 C87 214 89 232 93 243 C98 252 108 252 112 243 C117 231 121 209 123 186 C126 156 129 130 134 108 C139 90 145 76 150 64 C155 76 161 90 166 108 C171 130 174 156 177 186 C179 209 183 231 188 243 C192 252 202 252 207 243 C211 232 213 214 212 190 C211 156 208 120 205 92 C205 52 185 26 150 26 Z" fill="#2C3E9E" stroke="#1B2559" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M82 243 C87 252 98 252 103 243 C109 231 114 209 117 186 C121 156 124 130 130 108 C136 90 143 76 150 64 C137 79 129 100 125 124 C121 148 118 184 113 208 C109 226 100 244 90 247 C86 247 83 246 82 243 Z" fill="#3A55D9"/>
+      <path d="M218 243 C213 252 202 252 197 243 C191 231 186 209 183 186 C179 156 176 130 170 108 C164 90 157 76 150 64 C163 79 171 100 175 124 C179 148 182 184 187 208 C191 226 200 244 210 247 C214 247 217 246 218 243 Z" fill="#3A55D9"/>
+      <path d="M84 216 C82 228 83 240 86 246 C90 252 98 251 102 243 C106 232 110 216 112 198 C112 212 110 227 106 237 C102 247 90 246 87 235 C85 228 84 222 84 216 Z" fill="#7FE3FF"/>
+      <path d="M216 216 C218 228 217 240 214 246 C210 252 202 251 198 243 C194 232 190 216 188 198 C188 212 190 227 194 237 C198 247 210 246 213 235 C215 228 216 222 216 216 Z" fill="#7FE3FF"/>
+      <path d="M102 62 C114 44 131 35 150 35 C169 35 186 44 198 62 C184 49 168 42 150 42 C132 42 116 49 102 62 Z" fill="#6B8CFF"/>
+    </g>
+
+    <g id="whale-hood">
+      <path d="M150 38 C116 38 94 60 93 96 C92 136 96 180 100 210 C102 221 106 228 114 228 C124 228 132 221 136 210 C139 201 141 191 141 182 C136 170 132 154 130 132 C128 108 134 88 150 82 C166 88 172 108 170 132 C168 154 164 170 159 182 C159 191 161 201 164 210 C168 221 176 228 186 228 C194 228 198 221 200 210 C204 180 208 136 207 96 C206 60 184 38 150 38 Z" fill="#DCE6FF" stroke="#1B2559" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M138 186 C132 168 128 148 128 128 C128 106 134 90 148 84 C136 92 132 106 131 128 C130 150 134 172 140 188 C139 193 136 193 138 186 Z" fill="#B9C8F0" opacity="0.75"/>
+      <path d="M162 186 C168 168 172 148 172 128 C172 106 166 90 152 84 C164 92 168 106 169 128 C170 150 166 172 160 188 C161 193 164 193 162 186 Z" fill="#B9C8F0" opacity="0.75"/>
+      <path d="M124 176 C119 162 116 144 117 126 C118 104 128 88 144 84 C132 92 126 106 125 126 C124 146 128 166 134 180 C132 185 127 184 124 176 Z" fill="#FFFFFF" opacity="0.7"/>
+      <path d="M176 176 C181 162 184 144 183 126 C182 104 172 88 156 84 C168 92 174 106 175 126 C176 146 172 166 166 180 C168 185 173 184 176 176 Z" fill="#FFFFFF" opacity="0.7"/>
+      <path d="M150 34 C158 23 168 18 178 20 C168 25 161 32 157 41 C154 47 147 47 146 40 C146 37 148 35 150 34 Z" fill="#DCE6FF" stroke="#1B2559" stroke-width="2.6" stroke-linejoin="round"/>
+      <path d="M150 34 C143 24 133 19 123 21 C133 26 140 33 144 42 C147 48 154 47 155 40 C155 37 152 35 150 34 Z" fill="#DCE6FF" stroke="#1B2559" stroke-width="2.6" stroke-linejoin="round"/>
+      <path d="M152 28 C156 22 162 19 168 20 C161 23 156 27 153 33 Z" fill="#7FE3FF"/>
+      <circle cx="150" cy="48" r="6" fill="#4D6BFE" stroke="#1B2559" stroke-width="2.4"/>
+      <circle cx="150" cy="47" r="2.6" fill="#1B2559" opacity="0.8"/>
+      <path d="M143 60 C141 68 140 76 140 82 C136 76 137 66 143 60 Z" fill="#4D6BFE"/>
+      <path d="M157 60 C159 68 160 76 160 82 C164 76 163 66 157 60 Z" fill="#4D6BFE"/>
+      <circle cx="143" cy="61" r="3" fill="#7FE3FF" stroke="#1B2559" stroke-width="1.8"/>
+      <circle cx="157" cy="61" r="3" fill="#7FE3FF" stroke="#1B2559" stroke-width="1.8"/>
+      <path d="M101 118 C101 148 104 180 108 204 C104 180 100 148 100 120 Z" fill="#7FE3FF"/>
+      <path d="M199 118 C199 148 196 180 192 204 C196 180 200 148 200 120 Z" fill="#7FE3FF"/>
+      <path d="M112 224 C122 224 130 217 134 206 C136 214 134 222 128 226 C122 230 114 229 112 224 Z" fill="#B9C8F0"/>
+      <path d="M188 224 C178 224 170 217 166 206 C164 214 166 222 172 226 C178 230 186 229 188 224 Z" fill="#B9C8F0"/>
+    </g>
+
+    <g id="whale-fin-l">
+      <path d="M128 198 C120 197 113 200 108 206 C102 214 99 224 100 232 C101 239 107 242 114 239 C122 236 129 228 134 218 C138 210 139 201 136 197 C134 195 131 196 128 198 Z" fill="#DCE6FF" stroke="#1B2559" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M107 206 C103 213 101 222 102 229 C106 221 111 213 118 208 C114 206 110 205 107 206 Z" fill="#FFFFFF"/>
+      <path d="M114 239 C122 236 129 228 134 218 C135 226 131 234 124 239 C119 242 113 242 111 240 C112 240 113 240 114 239 Z" fill="#B9C8F0"/>
+      <path d="M103 222 C106 228 110 232 115 233" fill="none" stroke="#1B2559" stroke-width="2.2" stroke-linecap="round" opacity="0.45"/>
+    </g>
+
+    <g id="whale-fin-r">
+      <path d="M168 208 C176 202 184 200 190 201 C196 202 199 207 198 214 C197 222 190 232 181 237 C174 241 166 241 162 237 C159 233 160 226 163 219 C164 215 166 211 168 208 Z" fill="#DCE6FF" stroke="#1B2559" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M190 204 C194 206 196 210 195 215 C191 222 185 230 178 235 C184 227 189 218 190 209 C190 207 190 205 190 204 Z" fill="#B9C8F0"/>
+      <path d="M168 208 C172 214 176 219 181 222 C175 222 169 218 165 212 C164 210 166 208 168 208 Z" fill="#FFFFFF"/>
+      <path d="M163 232 C167 233 172 233 176 232" fill="none" stroke="#1B2559" stroke-width="2.2" stroke-linecap="round" opacity="0.45"/>
+    </g>
+
+    <g id="whale-head">
+      <path d="M150 54 C174 54 191 72 191 98 C191 120 173 146 150 146 C127 146 109 120 109 98 C109 72 126 54 150 54 Z" fill="#FFE3D5" stroke="#1B2559" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M118 118 C124 132 136 143 150 144 C136 145 123 134 118 118 Z" fill="#F3C4AE"/>
+      <path d="M182 118 C176 132 164 143 150 144 C164 145 177 134 182 118 Z" fill="#F3C4AE"/>
+      <path d="M116 84 C118 72 123 64 130 58 C124 66 120 74 118 86 Z" fill="#FFD9C6" opacity="0.8"/>
+    </g>
+
+    <g id="whale-face">
+      <ellipse cx="121" cy="128" rx="10.5" ry="5.6" fill="#FFD1BE"/>
+      <ellipse cx="179" cy="128" rx="10.5" ry="5.6" fill="#FFD1BE"/>
+      <path d="M144 134 C141 130 147 128 150 132 C153 128 159 130 156 134 C153 139 147 139 144 134 Z" fill="#B3564C" stroke="#1B2559" stroke-width="2.4" stroke-linejoin="round"/>
+      <path d="M150 136 C152 138 154 138 156 136 L156 132 L144 132 L144 136 C146 138 148 138 150 136 Z" fill="#FF9AA8" opacity="0.9"/>
+      <path d="M144 134 C147 131 153 131 156 134" fill="none" stroke="#1B2559" stroke-width="2.4" stroke-linecap="round"/>
+      <path d="M147 135 C146.4 136 146.4 137 147 137.8 C147.6 137 147.6 136 147 135 Z" fill="#FFFFFF" opacity="0.8"/>
+    </g>
+
+    <g id="whale-blush-l">
+      <ellipse cx="116" cy="130" rx="10.5" ry="6" fill="#FF9AA8" opacity="0.5"/>
+    </g>
+
+    <g id="whale-blush-r">
+      <ellipse cx="184" cy="130" rx="10.5" ry="6" fill="#FF9AA8" opacity="0.5"/>
+    </g>
+
+    <g id="whale-eye-l">
+      <ellipse cx="170" cy="113" rx="13.5" ry="15" fill="#FFFFFF" stroke="#1B2559" stroke-width="2.6"/>
+      <ellipse cx="170" cy="114" rx="10" ry="11.8" fill="#4D6BFE"/>
+      <ellipse cx="170" cy="115" rx="4.6" ry="5.6" fill="#1B2559"/>
+      <path d="M160 109 C162.5 102 168.5 98 174.5 98.5 C167 100.5 162.5 104.5 160 109 Z" fill="#6B8CFF"/>
+      <circle cx="165.5" cy="107" r="3.6" fill="#FFFFFF"/>
+      <circle cx="174.5" cy="121" r="1.9" fill="#DFF4FF"/>
+    </g>
+
+    <g id="whale-eye-r">
+      <ellipse cx="130" cy="113" rx="13.5" ry="15" fill="#FFFFFF" stroke="#1B2559" stroke-width="2.6"/>
+      <ellipse cx="130" cy="114" rx="10" ry="11.8" fill="#4D6BFE"/>
+      <ellipse cx="130" cy="115" rx="4.6" ry="5.6" fill="#1B2559"/>
+      <path d="M140 109 C137.5 102 131.5 98 125.5 98.5 C133 100.5 137.5 104.5 140 109 Z" fill="#6B8CFF"/>
+      <circle cx="125.5" cy="107" r="3.6" fill="#FFFFFF"/>
+      <circle cx="134.5" cy="121" r="1.9" fill="#DFF4FF"/>
+    </g>
+
+    <g id="whale-brow-l">
+      <path d="M162 94 C166 91 171 91 174 93" fill="none" stroke="#232A4D" stroke-width="2.4" stroke-linecap="round"/>
+    </g>
+
+    <g id="whale-brow-r">
+      <path d="M138 94 C134 91 129 91 126 93" fill="none" stroke="#232A4D" stroke-width="2.4" stroke-linecap="round"/>
+    </g>
+
+    <g id="whale-mouth">
+      <path d="M145 136 C147 132 153 132 155 136 C153 139 147 139 145 136 Z" fill="#B3564C" stroke="#1B2559" stroke-width="2.4" stroke-linejoin="round"/>
+      <path d="M145 136 C147 133 153 133 155 136 Z" fill="#FF9AA8"/>
+    </g>
+
+    <g id="whale-hair-front">
+      <path d="M112 90 C110 62 124 42 150 42 C176 42 190 62 188 90 C182 72 174 64 166 58 C160 66 155 72 151 80 C147 72 142 66 136 60 C128 66 118 76 112 90 Z" fill="#2C3E9E" stroke="#1B2559" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M151 80 L146 98 L140 82 Z" fill="#2C3E9E" stroke="#1B2559" stroke-width="2.4" stroke-linejoin="round"/>
+      <path d="M136 60 L129 84 L122 64 Z" fill="#2C3E9E" stroke="#1B2559" stroke-width="2.4" stroke-linejoin="round"/>
+      <path d="M164 60 L171 84 L178 64 Z" fill="#2C3E9E" stroke="#1B2559" stroke-width="2.4" stroke-linejoin="round"/>
+      <path d="M110 88 L104 100 L100 86 Z" fill="#2C3E9E" stroke="#1B2559" stroke-width="2.4" stroke-linejoin="round"/>
+      <path d="M190 88 L196 100 L200 86 Z" fill="#2C3E9E" stroke="#1B2559" stroke-width="2.4" stroke-linejoin="round"/>
+      <path d="M145 76 L141 90 L136 76 Z" fill="#6B8CFF" opacity="0.5"/>
+      <path d="M157 76 L159 90 L164 76 Z" fill="#6B8CFF" opacity="0.35"/>
+      <path d="M170 60 C178 66 186 76 191 90 C188 74 180 63 170 56 Z" fill="#6B8CFF"/>
+      <path d="M118 64 C114 70 111 80 109 90 C110 76 114 66 120 60 Z" fill="#6B8CFF" opacity="0.85"/>
+      <path d="M104 40 C110 28 120 22 130 22 C122 26 116 32 112 40 C110 46 102 46 104 40 Z" fill="#2C3E9E" stroke="#1B2559" stroke-width="2.4" stroke-linejoin="round"/>
+      <path d="M105 44 C110 40 115 37 120 36 C116 39 112 42 109 46 Z" fill="#7FE3FF"/>
+      <path d="M102 96 C99 118 98 140 101 162 C97 142 95 118 98 98 Z" fill="#2C3E9E" stroke="#1B2559" stroke-width="2.4" stroke-linejoin="round"/>
+      <path d="M198 96 C201 118 202 140 199 162 C203 142 205 118 202 98 Z" fill="#2C3E9E" stroke="#1B2559" stroke-width="2.4" stroke-linejoin="round"/>
+      <path d="M100 150 C99 156 99 161 101 166 C102 160 102 154 102 148 Z" fill="#7FE3FF"/>
+      <path d="M200 150 C201 156 201 161 199 166 C198 160 198 154 198 148 Z" fill="#7FE3FF"/>
+      <path d="M150 46 C140 46 132 51 126 58 C133 51 141 48 150 48 C159 48 167 51 174 58 C168 51 160 46 150 46 Z" fill="#6B8CFF" opacity="0.9"/>
+    </g>
+
+    <g id="whale-ornament">
+      <path d="M204 40 C197 38 190 38 185 42 C189 44 193 47 195 51 C198 48 201 45 205 44 Z" fill="#7FE3FF" stroke="#1B2559" stroke-width="2.4" stroke-linejoin="round"/>
+      <path d="M204 40 C216 54 230 68 237 68 C243 68 243 60 237 51 C231 42 220 35 211 33 C206 32 201 36 204 40 Z" fill="#7FE3FF" stroke="#1B2559" stroke-width="2.4" stroke-linejoin="round"/>
+      <path d="M206 42 C214 52 224 62 231 66 C222 56 214 47 206 42 Z" fill="#FFFFFF" opacity="0.7"/>
+      <path d="M218 56 C223 63 229 68 235 70 C235 74 231 77 226 75 C219 72 213 64 209 56 C208 52 211 49 214 50 C216 51 217 54 218 56 Z" fill="#7FE3FF" stroke="#1B2559" stroke-width="2.4" stroke-linejoin="round"/>
+      <path d="M201 52 C193 54 186 58 181 63 C188 62 196 59 203 55 Z" fill="#7FE3FF" stroke="#1B2559" stroke-width="2.4" stroke-linejoin="round"/>
+      <path d="M179 50 C189 52 197 45 203 38 C202 47 193 56 184 57 C180 58 177 52 179 50 Z" fill="#4D6BFE" stroke="#1B2559" stroke-width="2.4" stroke-linejoin="round"/>
+      <circle cx="184" cy="49" r="2.2" fill="#FFFFFF" opacity="0.9"/>
+    </g>
+
+    <g id="exp-idle"></g>
+
+    <g id="exp-happy">
+      <path d="M160 124 C164 110 176 102 188 106" fill="none" stroke="#1B2559" stroke-width="5" stroke-linecap="round"/>
+      <path d="M140 124 C136 110 124 102 112 106" fill="none" stroke="#1B2559" stroke-width="5" stroke-linecap="round"/>
+      <path d="M135 131 C141 146 159 146 165 131 C161 142 139 142 135 131 Z" fill="#B3564C" stroke="#1B2559" stroke-width="2.8" stroke-linejoin="round"/>
+      <ellipse cx="116" cy="130" rx="11" ry="6.2" fill="#FF9AA8"/>
+      <ellipse cx="184" cy="130" rx="11" ry="6.2" fill="#FF9AA8"/>
+      <path d="M80 116 L82.5 122 L88.5 124.5 L82.5 127 L80 133 L77.5 127 L71.5 124.5 L77.5 122 Z" fill="#FFFFFF" stroke="#7FE3FF" stroke-width="1.6"/>
+      <path d="M222 112 L224 117 L229 119 L224 121 L222 126 L220 121 L215 119 L220 117 Z" fill="#FFFFFF" stroke="#7FE3FF" stroke-width="1.6"/>
+    </g>
+
+    <g id="exp-thinking">
+      <path d="M160 90 C165 87 171 87 174 86" fill="none" stroke="#232A4D" stroke-width="2.6" stroke-linecap="round"/>
+      <path d="M140 84 C136 86 130 88 126 88" fill="none" stroke="#232A4D" stroke-width="2.6" stroke-linecap="round"/>
+      <path d="M150 138 C153 140 157 138 158 136" fill="none" stroke="#1B2559" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="224" cy="80" r="11" fill="#7FE3FF" stroke="#1B2559" stroke-width="2.4"/>
+      <circle cx="224" cy="80" r="3.6" fill="#FFFFFF" stroke="#1B2559" stroke-width="1.5"/>
+      <circle cx="243" cy="62" r="4.4" fill="#7FE3FF" stroke="#1B2559" stroke-width="2"/>
+      <circle cx="254" cy="48" r="2.8" fill="#7FE3FF" stroke="#1B2559" stroke-width="1.8"/>
+      <path d="M238 94 C241 91 245 90 248 91" fill="none" stroke="#7FE3FF" stroke-width="3" stroke-linecap="round"/>
+    </g>
+
+    <g id="exp-working">
+      <circle cx="226" cy="76" r="13" fill="#7FE3FF" stroke="#1B2559" stroke-width="2.6"/>
+      <circle cx="226" cy="76" r="4" fill="#FFFFFF" stroke="#1B2559" stroke-width="1.6"/>
+      <rect x="223.4" y="55" width="5.2" height="7" rx="2.4" fill="#7FE3FF" stroke="#1B2559" stroke-width="2"/>
+      <rect x="223.4" y="90" width="5.2" height="7" rx="2.4" fill="#7FE3FF" stroke="#1B2559" stroke-width="2"/>
+      <rect x="205.5" y="73.4" width="7" height="5.2" rx="2.4" fill="#7FE3FF" stroke="#1B2559" stroke-width="2"/>
+      <rect x="239.5" y="73.4" width="7" height="5.2" rx="2.4" fill="#7FE3FF" stroke="#1B2559" stroke-width="2"/>
+      <path d="M144 134 C147 131 153 131 156 134" fill="none" stroke="#1B2559" stroke-width="3" stroke-linecap="round"/>
+    </g>
+
+    <g id="exp-sleepy">
+      <path d="M156 112 C165 118 183 118 192 112" fill="none" stroke="#1B2559" stroke-width="3.6" stroke-linecap="round"/>
+      <path d="M144 112 C135 118 117 118 108 112" fill="none" stroke="#1B2559" stroke-width="3.6" stroke-linecap="round"/>
+      <path d="M151 128 C154 131 154 136 152 139 C149 142 144 141 143 137 C142 133 144 130 146 127 C147 125 148 123 149 124 C150 125 150 126 151 128 Z" fill="#B3564C" stroke="#1B2559" stroke-width="2.4" stroke-linejoin="round"/>
+      <polygon points="210,86 230,86 210,106 230,106 210,126" fill="#7FE3FF" stroke="#1B2559" stroke-width="2.4" stroke-linejoin="round"/>
+      <polygon points="234,60 246,60 234,72 246,72 234,84" fill="#7FE3FF" stroke="#1B2559" stroke-width="2" stroke-linejoin="round"/>
+      <polygon points="250,40 258,40 250,48 258,48 250,56" fill="#7FE3FF" stroke="#1B2559" stroke-width="1.8" stroke-linejoin="round"/>
+    </g>
+
+    <g id="exp-surprised">
+      <path d="M160 78 C165 74 171 74 174 76" fill="none" stroke="#232A4D" stroke-width="2.6" stroke-linecap="round"/>
+      <path d="M140 78 C135 74 129 74 126 76" fill="none" stroke="#232A4D" stroke-width="2.6" stroke-linecap="round"/>
+      <ellipse cx="150" cy="136" rx="5" ry="6.6" fill="#B3564C" stroke="#1B2559" stroke-width="2.6"/>
+      <path d="M240 58 C243 64 244 72 243 78 C242 84 239 87 235 87 C231 87 228 83 228 77 C228 71 230 63 234 58 C236 55 238 55 240 58 Z" fill="#7FE3FF" stroke="#1B2559" stroke-width="2.4" stroke-linejoin="round"/>
+      <path d="M236 62 C238 67 238 74 237 79 C236 83 234 84 233 82 C231 78 232 69 236 62 Z" fill="#FFFFFF" opacity="0.7"/>
+      <path d="M262 98 C265 91 270 86 277 84" fill="none" stroke="#232A4D" stroke-width="2.8" stroke-linecap="round"/>
+      <path d="M268 112 C272 105 277 101 284 100" fill="none" stroke="#232A4D" stroke-width="2.8" stroke-linecap="round"/>
+    </g>
+  </g>
+</svg>
