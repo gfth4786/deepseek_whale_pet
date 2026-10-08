@@ -166,6 +166,30 @@ body {
   -webkit-user-drag: none;
 }
 
+/* ── sprite animation (PNG frame sequences) ─────────────────────────────── */
+
+.eat-token {
+  display: none;                 /* hidden by default; shown by .sprite--active */
+  width: 100%;
+  max-width: 300px;
+  height: 100%;
+  object-fit: contain;
+  object-position: bottom center;
+  image-rendering: auto;
+  -webkit-user-drag: none;
+  /* Same drop-shadow as the character so the chroma-keyed art blends in. */
+  filter: drop-shadow(0 8px 18px rgba(77, 107, 254, 0.35));
+}
+
+/* Hide both the SVG character and static PNGs while a sprite is playing. */
+#app.sprite--active .character {
+  display: none;
+}
+
+#app.sprite--active #eat-token {
+  display: block;
+}
+
 #app[data-mood="idle"] .character__png[data-mood="idle"],
 #app[data-mood="happy"] .character__png[data-mood="happy"],
 #app[data-mood="thinking"] .character__png[data-mood="thinking"],

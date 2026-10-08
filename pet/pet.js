@@ -35,6 +35,7 @@ const api = (path, extra = {}) => {
 const el = {
   app: document.getElementById('app'),
   character: document.getElementById('character'),
+  eatToken: document.getElementById('eat-token'),
   bubble: document.getElementById('bubble'),
   bubbleText: document.getElementById('bubble-text'),
   bubbleMeta: document.getElementById('bubble-meta'),
@@ -69,6 +70,158 @@ const asr = {
 }
 
 const MOODS = ['idle', 'happy', 'thinking', 'working', 'sleepy', 'surprised']
+
+// ── sprite animation player ───────────────────────────────────────────────────
+
+/**
+ * Plays PNG frame sequences from `pet/assets/whale/<folder>/`.
+ * Each folder must contain `manifest.json` plus `frame_0000.png` … `frame_NNNN.png`.
+ * The player preloads all sets at startup; `setMood()` switches the active
+ * sequence automatically. When a sequence is not available for a mood the
+ * SVG + CSS fallback still works.
+ *
+ * Folder mapping:
+ *   idle      → idle/
+ *   happy     → happy/
+ *   thinking  → eat_token/
+ *   working   → working/
+ *   sleepy    → sleepy/
+ *   surprised → surprised/
+ */
+const spriteAnim = {
+  /** @type {Map<string, { manifest: object, frames: HTMLImageElement[], loaded: number } | null>} */
+  sets: new Map(),
+  /** The mood whose set is currently playing, or null when idle/SVG. */
+  current: null,
+  playing: false,
+  raf: 0,
+  index: 0,
+  startTime: 0,
+
+  /** Mood → subdirectory name under pet/assets/whale/. */
+  dir(mood) {
+    return mood === 'thinking' ? 'eat_token' : mood
+  },
+
+  /**
+   * Kick off background preloads for every mood.  Safe to call more than once;
+   * a second call is a no-op for each already-attempted mood.
+   */
+  warm() {
+    for (const mood of MOODS) void this._loadSet(mood)
+  },
+
+  /** Load one mood set. A missing manifest marks the mood as unavailable.
+   * Once loaded, if the current mood matches, auto-switch from SVG to sprite. */
+  async _loadSet(mood) {
+    if (this.sets.has(mood)) return
+    const dir = this.dir(mood)
+    let data
+    try {
+      const resp = await fetch(`/pet/assets/whale/${dir}/manifest.json`, { cache: 'no-store' })
+      data = await resp.json()
+    } catch {
+      this.sets.set(mood, null)
+      return
+    }
+    if (typeof data?.frames !== 'number' || data.frames <= 0) {
+      this.sets.set(mood, null)
+      return
+    }
+    const entry = { manifest: data, frames: new Array(data.frames).fill(null), loaded: 0 }
+    this.sets.set(mood, entry)
+    this._preloadBatch(mood, entry, 0)
+    // If this mood is currently displayed on the SVG fallback, switch over.
+    if (el.app.dataset.mood === mood && !this.playing) {
+      this.switchTo(mood)
+    }
+  },
+
+  /** Recursively preload frames 20 at a time. */
+  _preloadBatch(mood, entry, start) {
+    const batch = 20
+    const dir = this.dir(mood)
+    const end = Math.min(start + batch, entry.manifest.frames)
+    let pending = end - start
+    if (pending === 0) return
+    for (let i = start; i < end; i++) {
+      const img = new Image()
+      img.onload = img.onerror = () => {
+        entry.frames[i] = img
+        entry.loaded += 1
+        pending -= 1
+        if (pending === 0 && end < entry.manifest.frames) {
+          this._preloadBatch(mood, entry, end)
+        }
+      }
+      img.src = `/pet/assets/whale/${dir}/frame_${String(i).padStart(4, '0')}.png`
+    }
+  },
+
+  /** Whether a sprite set is loaded for this mood. */
+  has(mood) {
+    const set = this.sets.get(mood)
+    return set !== undefined && set !== null
+  },
+
+  /**
+   * Switch the displayed animation to `mood`.  Stops whatever was playing
+   * and starts the new sequence from frame 0.  Does nothing when `mood` has
+   * no sprite set.
+   */
+  switchTo(mood) {
+    this.stop()
+    const set = this.sets.get(mood)
+    if (set === undefined || set === null) return
+    this.current = mood
+    this.playing = true
+    this.index = 0
+    this.startTime = 0
+    el.app.classList.add('sprite--active')
+    this._tick()
+  },
+
+  /** Stop playback and restore the SVG character. */
+  stop() {
+    if (!this.playing) return
+    this.playing = false
+    this.current = null
+    cancelAnimationFrame(this.raf)
+    this.raf = 0
+    el.app.classList.remove('sprite--active')
+  },
+
+  _tick(now = performance.now()) {
+    if (!this.playing) return
+    this.raf = requestAnimationFrame((t) => { this._tick(t) })
+    if (this.startTime === 0) this.startTime = now
+
+    const set = this.current === null ? null : this.sets.get(this.current)
+    if (set === undefined || set === null) return
+    const fps = set.manifest.fps ?? 24
+    const total = set.manifest.frames ?? 1
+    const elapsed = now - this.startTime
+    const desired = Math.floor(elapsed / (1000 / fps)) % total
+
+    if (desired !== this.index) {
+      this.index = desired
+      const frame = this._readyFrame(set, desired)
+      if (frame !== null) el.eatToken.src = frame.src
+    }
+  },
+
+  _readyFrame(set, index) {
+    const exact = set.frames[index]
+    if (exact !== null && exact.complete && exact.naturalWidth > 0) return exact
+    for (let d = 1; d < set.frames.length; d++) {
+      const prev = set.frames[index - d]
+      if (prev !== null && prev.complete && prev.naturalWidth > 0) return prev
+      const next = set.frames[index + d]
+      if (next !== null && next.complete && next.naturalWidth > 0) return next
+    }
+    return null
+  },
+}
 
 // ── character ───────────────────────────────────────────────────────────────
 
@@ -151,6 +304,9 @@ const PLACEHOLDER_WHALE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 
 function setMood(mood, durationMs) {
   const next = MOODS.includes(mood) ? mood : 'idle'
   el.app.dataset.mood = next
+  // Switch to the sprite animation for this mood if available; SVG CSS
+  // animations remain the fallback when the sprite folder is missing.
+  if (spriteAnim.has(next)) spriteAnim.switchTo(next)
   if (moodTimer !== null) clearTimeout(moodTimer)
   moodTimer = null
   if (typeof durationMs === 'number' && durationMs > 0) {
@@ -609,7 +765,7 @@ function onEvent(event) {
     case 'status': {
       if (event.state === 'thinking') {
         setState('thinking', '思考中')
-        if (el.app.dataset.mood === 'idle' || el.app.dataset.mood === 'happy') setMood('thinking')
+        setMood('thinking')
       } else {
         setState('idle')
         if (el.app.dataset.mood === 'thinking' || el.app.dataset.mood === 'working') setMood('idle')
@@ -789,6 +945,7 @@ async function main() {
   setState('idle')
   setMood('idle')
   startIdleLife()
+  void spriteAnim.warm()
   connect()
   windowApi?.ready()
   report('boot', `mood=${el.app.dataset.mood}`)
