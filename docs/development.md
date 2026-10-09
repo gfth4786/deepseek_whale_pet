@@ -51,14 +51,14 @@ node --test tests/win32.test.mjs           # 只跑一个文件（38 个）
 | `tests/speech.test.mjs` | 围栏代码只念一次「（代码块，略过）」；链接留 label、URL/emoji 删除；短行内代码保留、长的概述；结构噪声清理；空输入；按终止符分句与上限；超长句自然断点；`toUtterances` 组合；`textOfContent` 只取文本块。 |
 | `tests/bridge.test.mjs` | 页面带 boot 数据返回、页面里没有可执行内联脚本；静态资源 MIME；未知资源与路径穿越被拒；缺 token / 错 token 403、header token 可用；`/api/message` 到达宿主 sink、空文本 400、宿主失败以 `ok:false` 值返回；`/api/client`；`/api/asr` 可选、解码后字节正确送达；SSE 推送与迟到客户端的事件重放；无窗口时 `publish` 返回 `false`；端口被占时回落到系统分配端口；`petUrl` 带 token。 |
 | `tests/session-watch.test.mjs` | 只订阅一次；结算回复变成 `reply` 与分句；没有 Agent 的会话被忽略；纯代码回复不朗读；`voice` 关闭时抑制；`turn/` 与 `tool/` 事件驱动状态；监听器抛错不影响后续；目标会话选择（最近活跃、无事件时取第一个、`pinned` / `none`）；空行被拒且不追加消息；快照内容；工具标签截断。 |
-| `tests/plugin-entry.test.mjs` | `name` / `inject`；`apply` 注册的工具集合与唯一的 teardown effect；每个工具定义都落在 harness 强制的 JSON Schema 白名单内（镜像 `packages/core/tools/src/json-schema.ts`，并自带走查测试）；teardown 真的关掉桥接且可重复调用；按 `tools.*` 关类；`enabled: false` 什么都不注册；非法配置让加载失败；`pet_mood` / `pet_window` 在无窗口时的返回值；越界 action 抛错。 |
+| `tests/plugin-entry.test.mjs` | `name` / `inject`；`apply` 注册的工具集合与唯一的 teardown effect；每个工具定义都落在 harness 强制的 JSON Schema 白名单内（镜像 `packages/core/tools/src/json-schema.ts`，并自带走查测试）；teardown 真的关掉桥接且可重复调用；按 `tools.*` 关类；`enabled: false` 什么都不注册；非法配置让加载失败；`pet_mood` / `pet_window` 在无窗口时的返回值；越界 action 抛错；**工具返回值是无损 JSON**（`JSON.parse(JSON.stringify(v))` 与原值深相等——注册表会拒绝含 `undefined` 的值，这个用例就是为线上真实翻车的 `pet_window status` 加的）。 |
 | `tests/launcher.test.mjs` | `--key=value` / `--key value` / 裸 flag 解析；`DSH_WHALE_PET_WINDOW` 的默认值、合并与坏 JSON 回落；`resolveElectron` 从 `dist/` 与 `DSH_WHALE_PET_ELECTRON` 解析；`findBrowser` 只返回存在的文件。 |
 | `tests/win32.test.mjs` | 6 个助手的完整 stdio 协议：文件存在、空 stdin / 坏 JSON 也输出单行 JSON 且退出码 0、信封形状（`ok` 布尔 + `value` 对象或 `error`+`code` 字符串）、无 BOM；`context.ps1` 的类型化只读快照与两次读数自洽；`media.ps1` 的非法参数、预演、真实读回、音量增减的“电平中性”与还原、媒体键回退、静音翻转与还原；`input.ps1` **全部为 dry run**（不移动、不点击、不输入）；`notify.ps1` 的真实通知、预演、空请求、非 ASCII 透传。 |
 
-**这个套件会真的碰系统状态**，因此在一个正在被使用的桌面上可能偶发失败（本仓库验证时就遇到过两次，重跑即过）：
+**这个套件会真的碰系统状态**，所以在一个人正在用的桌面上，"没动过"这类断言天然可能被并发操作打破。为此做了两件事：
 
-- `input.ps1` 的 dry-run 用例会前后各读一次光标位置并断言指针没动——你在这几十毫秒里动一下鼠标就会失败（`the pointer moved during a dry run`）。
-- `toggle-mute flips the flag…` 断言翻转静音不改变音量，别的程序（或音量键、驱动）在这期间改了音量也会失败。
+- 断言前后各采样两次（`dryRunLeavesStateAlone`）：如果两次采样之间就被改过，说明机器正忙，本次不判定（返回 `noisy`）。
+- 疑似被改动时**再测一遍**（`confirmedDryRunVerdict`）：真正的 dry-run 泄漏会复现，人类的偶发操作不会。只有复现的 `quiet-changed` 才判失败。
 
 ## 窗口渲染自检
 
@@ -66,7 +66,7 @@ node --test tests/win32.test.mjs           # 只跑一个文件（38 个）
 
 ```powershell
 node scripts/selftest-window.mjs --shot=tests/artifacts/pet-window.png
-# 成功：{"ok":true,"value":{"shot":"…","bytes":{"width":320,"height":420},"url":"http://127.0.0.1:PORT/pet/?token=***","ready":true}}
+# 成功：{"ok":true,"value":{"shot":"…","size":{"width":320,"height":420},"url":"http://127.0.0.1:PORT/pet/?token=***","ready":true}}
 # 没装 Electron：{"ok":false,"error":"Electron is not installed; nothing to render"}，退出码 1
 ```
 
@@ -84,6 +84,46 @@ pnpm dsh web --patch F:\project\dsh-plugin\whale-pet\tests\fixtures\dev-patch.ym
 ```
 
 overlay 里的行 `id: whale-pet-dev`、`debug: true`、桥接端口 4599、固定 token `whale-pet-dev-token`。无窗口模式加 `$env:DSH_WHALE_PET_AUTOLAUNCH = '0'`。
+
+### 改完代码，运行中的 DSH 会自动重新加载吗
+
+分三层，都是实测结论：
+
+1. **配置文件永远是热的。** profile 的 `cordis.patch.yml`、`$DSH_HOME/cordis.patch.yml`、profile 的 `package.json` 都被监听
+   （`packages/boot/hmr/src/watch-config.ts`），改动会重新对账，所以"新增一行插件""改某一行的 config"不用重启。但要注意：
+   **配置重载只是重跑 `apply`，用的还是缓存里的旧模块**——改代码不会因此生效。
+2. **源码热重载需要 DSH 以 `node --expose-internals` 启动。** HMR 靠清空 Node 的 ESM `loadCache` 让模块重新 import
+   （`packages/boot/hmr/src/index.ts` 的 `partialReload`），没有暴露 internals 时 `ctx.loader.internal` 是 `undefined`，
+   这一步做不了。`--expose-internals` **不能放进 `NODE_OPTIONS`**（会被拒绝），必须写在命令行上：
+
+   ```powershell
+   cd F:\project\deepseek-harness
+   node --expose-internals --import tsx/esm apps/cli/src/bin.ts web
+   ```
+
+3. **再把插件目录加进 `hmr` 行的监视根。** `base` 层装的是 `root: []`（"配置热重载默认开、模块监视默认关"），在 profile 的
+   `cordis.patch.yml` 里覆盖：
+
+   ```yaml
+   - id: hmr
+     config:
+       root:
+         - F:/project/dsh-plugin
+   ```
+
+实测（本机，2026-10-08）：一个以 `--expose-internals` 启动、并把上面 root 配好的实例里，改一行 `whale-pet/index.js` 保存后，
+终端立刻打出新的加载日志、桥接端口也换了一个（说明插件被完整卸载并用**新模块**重建）：
+
+```
+[whale-pet] ready — bridge http://127.0.0.1:55417 …     ← 启动时
+[whale-pet] ready — bridge http://127.0.0.1:55440 …     ← 保存文件后自动重载
+```
+
+没有 `--expose-internals` 时，同样的操作只会重跑缓存里的旧模块（表现是插件重启了、但代码没变）。
+
+> 用开发 overlay（`tests/fixtures/dev-patch.yml`）时注意：它插入的是**独立的行 id**（`whale-pet-dev`）。
+> 如果同一个插件已经作为 bundle 装进了 profile，两者会同时加载、工具重名注册失败。装了 bundle 就别再用这个 overlay。
+> 只想要"不重启也能看到改动"，见 [plugin-hub](../../plugin-hub) —— 侧边栏的插件页里可以直接点「重启」。
 
 ### 验证桥接
 

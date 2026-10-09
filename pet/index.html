@@ -20,7 +20,7 @@
       <p class="bubble__meta" id="bubble-meta"></p>
     </section>
 
-    <div id="stage" class="stage" title="点一下说话，右键更多">
+    <div id="stage" class="stage" title="点一下说话，右键选择动作和声音">
       <div id="character" class="character" role="img" aria-label="DeepSeek 鲸鱼娘"></div>
       <img id="eat-token" class="eat-token" alt="">
       <div id="busy" class="busy" hidden>
@@ -39,14 +39,7 @@
       <button type="submit" id="send" class="composer__send" title="发送（回车）" aria-label="发送">➤</button>
     </form>
 
-    <nav id="menu" class="menu" hidden>
-      <button type="button" data-action="composer">显示输入框</button>
-      <button type="button" data-action="mute">静音朗读</button>
-      <button type="button" data-action="topmost">取消总在最前</button>
-      <button type="button" data-action="speak-last">重念上一句</button>
-      <button type="button" data-action="hide">隐藏窗口</button>
-      <button type="button" data-action="quit" class="menu__danger">退出桌宠</button>
-    </nav>
+    <aside id="sidebar" class="sidebar" hidden></aside>
 
     <div id="toast" class="toast" hidden></div>
   </main>

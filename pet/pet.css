@@ -3,7 +3,7 @@
  *
  * Everything here is scoped to one transparent, frameless, 320x420 window: a
  * speech bubble above, the character below, an optional composer, and a
- * right-click menu. Mood is a single attribute on #app, so the artwork and the
+ * right-click sidebar. Mood is a single attribute on #app, so the artwork and the
  * animations key off the same switch as the behaviour.
  */
 
@@ -177,6 +177,11 @@ body {
   object-position: bottom center;
   image-rendering: auto;
   -webkit-user-drag: none;
+  /* No window-drag here: the sprite replaces the character while it plays, and
+   * must stay clickable/right-clickable so the composer and sidebar keep working.
+   * Without this the sprite inherits #stage's drag region and swallows clicks,
+   * and a right-click opens the Windows system menu ("关闭") instead. */
+  -webkit-app-region: no-drag;
   /* Same drop-shadow as the character so the chroma-keyed art blends in. */
   filter: drop-shadow(0 8px 18px rgba(77, 107, 254, 0.35));
 }
@@ -505,25 +510,44 @@ body {
   }
 }
 
-/* ── menu ────────────────────────────────────────────────────────────────── */
+/* ── sidebar ────────────────────────────────────────────────────────────── */
 
-.menu {
+.sidebar {
   position: absolute;
   right: 10px;
-  bottom: 64px;
+  top: 50%;
+  transform: translateY(-50%);
   z-index: 20;
   display: flex;
   flex-direction: column;
-  min-width: 148px;
-  padding: 5px;
-  border-radius: 12px;
+  gap: 8px;
+  min-width: 132px;
+  max-height: 82%;
+  overflow-y: auto;
+  padding: 8px;
+  border-radius: 14px;
   background: rgba(11, 15, 36, 0.96);
   border: 1px solid rgba(125, 149, 255, 0.4);
   box-shadow: var(--shadow);
   -webkit-app-region: no-drag;
+  animation: sidebar-in 160ms ease-out;
 }
 
-.menu button {
+.sidebar__section {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.sidebar__title {
+  margin: 0 0 2px;
+  padding: 0 8px;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: rgba(244, 247, 255, 0.5);
+}
+
+.sidebar__button {
   padding: 7px 10px;
   border: 0;
   border-radius: 8px;
@@ -533,14 +557,36 @@ body {
   font-family: inherit;
   text-align: left;
   cursor: pointer;
+  transition: background 120ms ease;
 }
 
-.menu button:hover {
+.sidebar__button:hover {
   background: rgba(77, 107, 254, 0.3);
 }
 
-.menu__danger {
-  color: #ff9db1;
+/* The voice currently in use, so the sidebar shows the active choice. */
+.sidebar__button[data-active="true"] {
+  background: rgba(77, 107, 254, 0.28);
+  box-shadow: inset 0 0 0 1px rgba(125, 149, 255, 0.55);
+}
+
+.sidebar__empty {
+  margin: 0;
+  padding: 4px 8px;
+  font-size: 11px;
+  color: rgba(244, 247, 255, 0.4);
+}
+
+@keyframes sidebar-in {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) translateX(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(-50%);
+  }
 }
 
 /* ── toast ───────────────────────────────────────────────────────────────── */

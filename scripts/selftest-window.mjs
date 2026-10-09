@@ -13,7 +13,8 @@
 import { spawn } from 'node:child_process'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { mkdirSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { PetBridge } from '../src/bridge.js'
 import { parseArgs, resolveElectron } from './launch-pet.mjs'
 
@@ -51,9 +52,13 @@ const port = await bridge.start()
 /** Run the launcher and resolve with its reported JSON. */
 function runWindow() {
   return new Promise((resolve) => {
+    // A private user-data directory: otherwise the running pet window's
+    // single-instance lock makes this Electron quit without rendering anything.
+    const profile = mkdtempSync(join(tmpdir(), 'whale-pet-selftest-'))
     const child = spawn(process.execPath, [
       join(HERE, 'launch-pet.mjs'),
       `--url=${bridge.petUrl}`,
+      `--user-data-dir=${profile}`,
       '--selftest',
       `--shot=${shot}`,
     ], { stdio: ['ignore', 'pipe', 'inherit'], windowsHide: false })
@@ -67,6 +72,7 @@ function runWindow() {
     }, 90000)
     child.on('exit', (code) => {
       clearTimeout(timer)
+      rmSync(profile, { recursive: true, force: true })
       const line = stdout.trim().split('\n').filter(Boolean).at(-1)
       if (line === undefined) {
         resolve({ ok: false, error: `the launcher exited with code ${String(code)} and said nothing` })

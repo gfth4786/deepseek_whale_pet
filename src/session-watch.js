@@ -194,11 +194,18 @@ export class SessionWatcher {
       running: agent !== undefined && this.#running.has(agent.id),
       voice: {
         enabled: voice.enabled,
+        // `browser` synthesizes in the window; `http` asks the host for a clip.
+        engine: voice.engine,
         lang: voice.lang,
         voice: voice.voice,
         rate: voice.rate,
         pitch: voice.pitch,
         volume: voice.volume,
+        // The window chunks provider requests itself, so it needs the budget.
+        maxChars: voice.maxChars,
+        // Empty means "synthesize the reply"; a path boots the window in effect
+        // mode and every reply plays that clip instead.
+        effectFile: voice.effectFile,
       },
       asr: {
         enabled: this.config.asr.enabled,

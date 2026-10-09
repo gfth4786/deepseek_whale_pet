@@ -206,3 +206,18 @@ test('a tool rejects an out-of-range action instead of guessing', async () => {
     await assert.rejects(() => say.execute({ text: '   ' }, { signal: undefined }), /不能为空/)
   })
 })
+
+test('tool results are lossless JSON', async () => {
+  // The registry rejects a canonical value containing `undefined`, which is how
+  // a status call first failed in a live session: a `let note` that stayed
+  // undefined reached the model as an invalid tool output.
+  await withPlugin({ options: { autoLaunch: false, port: 0 } }, async (ctx) => {
+    const window = ctx.definitions.find(definition => definition.name === 'pet_window')
+    const status = await window.execute({ action: 'status' }, { signal: undefined })
+    assert.deepEqual(JSON.parse(JSON.stringify(status)), status)
+
+    const mood = ctx.definitions.find(definition => definition.name === 'pet_mood')
+    const emote = await mood.execute({ mood: 'happy' }, { signal: undefined })
+    assert.deepEqual(JSON.parse(JSON.stringify(emote)), emote)
+  })
+})

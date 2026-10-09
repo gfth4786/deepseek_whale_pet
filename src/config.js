@@ -48,7 +48,39 @@ export const DEFAULT_CONFIG = Object.freeze({
   },
   voice: {
     enabled: true,
-    /** BCP-47 tag handed to the speech synthesizer. */
+    /**
+     * How a reply becomes sound:
+     *   browser — the window's own speech synthesis (the default);
+     *   http    — ask the `http` provider below for audio and play that. This is
+     *             how a 曼波-style voice model (Fish Audio, GPT-SoVITS,
+     *             Bert-VITS2, …) is wired in.
+     */
+    engine: 'browser',
+    /** Remote or local speech-synthesis provider used when `engine` is `http`. */
+    http: {
+      /** Endpoint; may contain `{{text}}`, substituted URL-encoded. */
+      url: '',
+      /** POST (JSON body) or GET (query string only). */
+      method: 'POST',
+      /** Request headers, e.g. `authorization: 'Bearer …'`. Never reach the window. */
+      headers: {},
+      /**
+       * Request body template for POST. `{{text}}` is substituted JSON-escaped
+       * without its surrounding quotes, so `{"text":"{{text}}"}` stays valid JSON.
+       */
+      body: '{"text":"{{text}}"}',
+      /** Dotted path into a JSON response holding the audio, e.g. `data.audio`. */
+      audioPath: '',
+      /** How that value carries the audio: base64 bytes, or a URL to fetch. */
+      audioEncoding: 'base64',
+      /** Container the provider returns; the window plays it as-is. */
+      format: 'mp3',
+      /** Request deadline in milliseconds. */
+      timeoutMs: 30000,
+      /** Synthesized clips kept in memory, keyed by exact text (0 disables). */
+      cacheEntries: 64,
+    },
+    /** BCP-47 tag handed to the browser speech synthesizer. */
     lang: 'zh-CN',
     /** Preferred voice name; empty picks the best match for `lang`. */
     voice: '',
@@ -59,6 +91,13 @@ export const DEFAULT_CONFIG = Object.freeze({
     maxChars: 240,
     /** Speak the model's settled replies. */
     speakReplies: true,
+    /**
+     * Default sound effect for every reply, as a path relative to `pet/`
+     * (e.g. `assets/audio/manbo.mp3`). When set, the window boots in effect mode
+     * and plays that clip instead of synthesizing; the right-click 声音 sidebar
+     * still switches between the `src/config.yml` entries at runtime.
+     */
+    effectFile: '',
   },
   asr: {
     enabled: true,
@@ -109,13 +148,21 @@ const isPlainObject = value =>
 
 /**
  * Merge one user section over its defaults, rejecting unknown or mistyped keys.
+ *
+ * Nested sections recurse, so a user who sets one `voice.http` key keeps every
+ * other default in that section and still gets unknown-key diagnostics.
  * @param section - dotted section name used in diagnostics.
  * @param defaults - the default object for that section.
  * @param input - user-supplied value, or undefined.
  * @returns the merged section.
  */
 function mergeSection(section, defaults, input) {
-  if (input === undefined || input === null) return { ...defaults }
+  if (input === undefined || input === null) {
+    return Object.fromEntries(Object.entries(defaults).map(([key, value]) => [
+      key,
+      isPlainObject(value) ? mergeSection(`${section}.${key}`, value, undefined) : value,
+    ]))
+  }
   if (!isPlainObject(input)) throw new ConfigError(`${section} must be an object`)
   const merged = { ...defaults }
   for (const [key, value] of Object.entries(input)) {
@@ -123,6 +170,16 @@ function mergeSection(section, defaults, input) {
       throw new ConfigError(`unknown key ${section}.${key}`)
     }
     const expected = defaults[key]
+    if (isPlainObject(expected)) {
+      // An empty object default is a free-form map — request headers, where the
+      // user picks the keys — not a section with a fixed shape. Recursing into it
+      // would reject every key the user supplies, which is exactly what happened
+      // to `voice.http.headers` before this rule existed.
+      merged[key] = Object.keys(expected).length === 0
+        ? mergeMap(`${section}.${key}`, value)
+        : mergeSection(`${section}.${key}`, expected, value)
+      continue
+    }
     if (typeof expected === 'boolean' && typeof value !== 'boolean') {
       throw new ConfigError(`${section}.${key} must be a boolean`)
     }
@@ -135,6 +192,21 @@ function mergeSection(section, defaults, input) {
     merged[key] = value
   }
   return merged
+}
+
+/**
+ * Accept a free-form map, such as a set of request headers.
+ *
+ * The shape is the user's to choose; value types are checked where the map is
+ * interpreted (see the `voice.http.headers` validation in `resolveConfig`).
+ * @param section - dotted name used in diagnostics.
+ * @param input - user-supplied value.
+ * @returns a copy of the map.
+ */
+function mergeMap(section, input) {
+  if (input === undefined || input === null) return {}
+  if (!isPlainObject(input)) throw new ConfigError(`${section} must be an object`)
+  return { ...input }
 }
 
 /**
@@ -215,6 +287,28 @@ export function resolveConfig(raw, env = {}) {
   config.voice.pitch = clamp(config.voice.pitch, 0.5, 2)
   config.voice.volume = clamp(config.voice.volume, 0, 1)
   config.voice.maxChars = clamp(config.voice.maxChars, 40, 2000)
+  if (!['browser', 'http'].includes(config.voice.engine)) {
+    throw new ConfigError('voice.engine must be browser or http')
+  }
+  const voiceHttp = config.voice.http
+  voiceHttp.method = voiceHttp.method.toUpperCase()
+  if (!['GET', 'POST'].includes(voiceHttp.method)) {
+    throw new ConfigError('voice.http.method must be GET or POST')
+  }
+  if (!['base64', 'url'].includes(voiceHttp.audioEncoding)) {
+    throw new ConfigError('voice.http.audioEncoding must be base64 or url')
+  }
+  for (const [name, value] of Object.entries(voiceHttp.headers)) {
+    if (typeof value !== 'string') {
+      throw new ConfigError(`voice.http.headers.${name} must be a string`)
+    }
+  }
+  voiceHttp.timeoutMs = clamp(voiceHttp.timeoutMs, 1000, 120000)
+  voiceHttp.cacheEntries = clamp(voiceHttp.cacheEntries, 0, 512)
+  if (config.voice.engine === 'http' && voiceHttp.url.trim() === '') {
+    // Failing here beats a window that silently never speaks.
+    throw new ConfigError('voice.http.url is required when voice.engine is http')
+  }
   config.asr.maxSeconds = clamp(config.asr.maxSeconds, 3, 120)
   if (!['auto', 'webspeech', 'sapi'].includes(config.asr.engine)) {
     throw new ConfigError('asr.engine must be auto, webspeech, or sapi')
@@ -231,7 +325,10 @@ export function resolveConfig(raw, env = {}) {
   return Object.freeze({
     ...config,
     window: Object.freeze(config.window),
-    voice: Object.freeze(config.voice),
+    voice: Object.freeze({
+      ...config.voice,
+      http: Object.freeze({ ...config.voice.http, headers: Object.freeze({ ...config.voice.http.headers }) }),
+    }),
     asr: Object.freeze(config.asr),
     session: Object.freeze(config.session),
     approval: Object.freeze(config.approval),

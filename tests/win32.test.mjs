@@ -174,26 +174,44 @@ function sampleEquals(left, right) {
 }
 
 /**
+ * Whether machine-global state is holding still across several samples.
+ *
+ * A busy desktop makes any before/after comparison meaningless, so the sampler
+ * is read `samples` times and every reading must match. Three or more readings
+ * rather than two is deliberate: someone dragging the mouse produces short
+ * pauses, and a pair of samples taken inside one of them would still look quiet.
+ * @param measure - zero-argument sampler of the state under test.
+ * @param samples - how many readings to take (>= 2).
+ * @param gapMs - interval between readings.
+ * @returns true when every reading is identical.
+ */
+function isQuiet(measure, samples = 4, gapMs = 180) {
+  const first = measure()
+  for (let index = 1; index < samples; index++) {
+    sleepSync(gapMs)
+    if (!sampleEquals(first, measure())) return false
+  }
+  return true
+}
+
+/**
  * Judge one dry run against machine-global state that a human can also change.
  *
  * Several assertions here compare the cursor or the mute flag before and after a
  * dry run. Whoever shares the desktop may move the mouse or hit a mute key at
- * any moment, which would otherwise surface as a helper failure. The state is
- * therefore sampled twice before and twice after the action: a change across a
- * pair means the machine was busy and no verdict is possible, so the suite
- * reports `noisy` instead of blaming the helper.
+ * any moment, which would otherwise surface as a helper failure. Both windows are
+ * therefore gated on {@link isQuiet}: if either one was busy, no verdict is
+ * possible and the suite reports `noisy` instead of blaming the helper.
  * @param measure - zero-argument sampler of the state under test.
- * @param action - performs the dry run between the sample pairs.
+ * @param action - performs the dry run between the two windows.
  * @returns `quiet-unchanged`, `quiet-changed`, or `noisy`.
  */
 function dryRunLeavesStateAlone(measure, action) {
-  const first = measure()
-  const second = measure()
+  if (!isQuiet(measure)) return 'noisy'
+  const before = measure()
   action()
-  const third = measure()
-  const fourth = measure()
-  if (!sampleEquals(first, second) || !sampleEquals(third, fourth)) return 'noisy'
-  return sampleEquals(first, fourth) ? 'quiet-unchanged' : 'quiet-changed'
+  if (!isQuiet(measure)) return 'noisy'
+  return sampleEquals(before, measure()) ? 'quiet-unchanged' : 'quiet-changed'
 }
 
 /**
@@ -201,10 +219,11 @@ function dryRunLeavesStateAlone(measure, action) {
  *
  * A single quiet window that shows a change is far more likely to be someone
  * hitting a mute key between two samples than a helper ignoring `dryRun`. A real
- * leak reproduces, so the measurement is repeated once and only a second
- * `quiet-changed` verdict is treated as a failure.
+ * leak reproduces, so the measurement is repeated and only a second
+ * `quiet-changed` verdict with the desktop quiet throughout is treated as a
+ * failure.
  * @param measure - zero-argument sampler of the state under test.
- * @param action - performs the dry run between the sample pairs.
+ * @param action - performs the dry run between the two windows.
  * @returns the confirmed verdict: `quiet-unchanged`, `quiet-changed`, or `noisy`.
  */
 function confirmedDryRunVerdict(measure, action) {

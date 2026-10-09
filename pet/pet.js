@@ -45,11 +45,17 @@ const el = {
   input: document.getElementById('input'),
   send: document.getElementById('send'),
   mic: document.getElementById('mic'),
-  menu: document.getElementById('menu'),
+  sidebar: document.getElementById('sidebar'),
   toast: document.getElementById('toast'),
 }
 
-/** Voice settings, merged with anything the host sends later. */
+/**
+ * Voice settings, merged with anything the host sends later.
+ *
+ * `kind` selects how a reply is voiced: `tts` synthesizes the text, `effect`
+ * plays one sound clip instead (a meme voice pack such as 曼波). The sidebar's
+ * 声音 section switches between catalogue entries, which set these fields.
+ */
 const voice = {
   enabled: INITIAL.voice?.enabled !== false,
   lang: INITIAL.voice?.lang ?? 'zh-CN',
@@ -58,6 +64,16 @@ const voice = {
   pitch: Number(INITIAL.voice?.pitch ?? 1.25),
   volume: Number(INITIAL.voice?.volume ?? 1),
   muted: false,
+  /** Selected catalogue entry id, for persisting the choice across restarts. */
+  id: '',
+  /** `tts` | `effect`. */
+  kind: 'tts',
+  /** Clip path relative to `pet/`, for `kind: 'effect'`. */
+  file: '',
+  /** `browser` (window synthesis) or `http` (the host's speech provider). */
+  engine: INITIAL.voice?.engine === 'http' ? 'http' : 'browser',
+  /** Chunk budget for one provider request. */
+  maxChars: Number(INITIAL.voice?.maxChars) > 0 ? Number(INITIAL.voice.maxChars) : 240,
 }
 
 /** Speech-recognition settings. */
@@ -71,16 +87,39 @@ const asr = {
 
 const MOODS = ['idle', 'happy', 'thinking', 'working', 'sleepy', 'surprised']
 
+/** Sidebar actions from the host config: sprite sequences the user can pick. */
+const ACTIONS = (Array.isArray(INITIAL.actions) ? INITIAL.actions : [])
+  .filter(action => action && typeof action.folder === 'string' && typeof action.name === 'string')
+/** Sidebar voices from the host config: sound entries the user can pick. */
+const VOICES = (Array.isArray(INITIAL.voices) ? INITIAL.voices : [])
+  .filter(entry => entry && typeof entry.id === 'string' && typeof entry.name === 'string')
+
+/** localStorage key holding the id of the voice the user picked last. */
+const VOICE_KEY = 'dsh-whale-pet.voice'
+
+// The deployment may pin a sound effect as the default (voice.effectFile), in
+// which case every reply plays it until the sidebar picks something else.
+if (typeof INITIAL.voice?.effectFile === 'string' && INITIAL.voice.effectFile.trim().length > 0) {
+  voice.kind = 'effect'
+  voice.file = INITIAL.voice.effectFile.trim()
+}
+
+/** Mood → the folder path under pet/ that holds its frame sequence. */
+function moodFolder(mood) {
+  return `assets/whale/${mood === 'thinking' ? 'eat_token' : mood}`
+}
+
 // ── sprite animation player ───────────────────────────────────────────────────
 
 /**
  * Plays PNG frame sequences from `pet/assets/whale/<folder>/`.
  * Each folder must contain `manifest.json` plus `frame_0000.png` … `frame_NNNN.png`.
- * The player preloads all sets at startup; `setMood()` switches the active
- * sequence automatically. When a sequence is not available for a mood the
- * SVG + CSS fallback still works.
+ * The player preloads every mood's and every configured action's sequence at
+ * startup; `setMood()` switches to a mood's sequence automatically, and the
+ * right-click sidebar plays an action's sequence directly. When a sequence is
+ * not available the SVG + CSS fallback still works.
  *
- * Folder mapping:
+ * Mood → folder mapping:
  *   idle      → idle/
  *   happy     → happy/
  *   thinking  → eat_token/
@@ -91,56 +130,54 @@ const MOODS = ['idle', 'happy', 'thinking', 'working', 'sleepy', 'surprised']
 const spriteAnim = {
   /** @type {Map<string, { manifest: object, frames: HTMLImageElement[], loaded: number } | null>} */
   sets: new Map(),
-  /** The mood whose set is currently playing, or null when idle/SVG. */
+  /** The folder whose set is currently playing, or null when idle/SVG. */
   current: null,
   playing: false,
   raf: 0,
   index: 0,
   startTime: 0,
 
-  /** Mood → subdirectory name under pet/assets/whale/. */
-  dir(mood) {
-    return mood === 'thinking' ? 'eat_token' : mood
-  },
-
   /**
-   * Kick off background preloads for every mood.  Safe to call more than once;
-   * a second call is a no-op for each already-attempted mood.
+   * Kick off background preloads for every mood folder plus every configured
+   * action folder.  Safe to call more than once; a second call is a no-op for
+   * each already-attempted folder.
    */
   warm() {
-    for (const mood of MOODS) void this._loadSet(mood)
+    const folders = new Set()
+    for (const mood of MOODS) folders.add(moodFolder(mood))
+    for (const action of ACTIONS) folders.add(action.folder)
+    for (const folder of folders) void this._loadSet(folder)
   },
 
-  /** Load one mood set. A missing manifest marks the mood as unavailable.
-   * Once loaded, if the current mood matches, auto-switch from SVG to sprite. */
-  async _loadSet(mood) {
-    if (this.sets.has(mood)) return
-    const dir = this.dir(mood)
+  /** Load one folder set. A missing manifest marks the folder as unavailable.
+   * Once loaded, if the folder matches the current mood, auto-switch from SVG
+   * to sprite. */
+  async _loadSet(folder) {
+    if (this.sets.has(folder)) return
     let data
     try {
-      const resp = await fetch(`/pet/assets/whale/${dir}/manifest.json`, { cache: 'no-store' })
+      const resp = await fetch(`/pet/${folder}/manifest.json`, { cache: 'no-store' })
       data = await resp.json()
     } catch {
-      this.sets.set(mood, null)
+      this.sets.set(folder, null)
       return
     }
     if (typeof data?.frames !== 'number' || data.frames <= 0) {
-      this.sets.set(mood, null)
+      this.sets.set(folder, null)
       return
     }
     const entry = { manifest: data, frames: new Array(data.frames).fill(null), loaded: 0 }
-    this.sets.set(mood, entry)
-    this._preloadBatch(mood, entry, 0)
-    // If this mood is currently displayed on the SVG fallback, switch over.
-    if (el.app.dataset.mood === mood && !this.playing) {
-      this.switchTo(mood)
+    this.sets.set(folder, entry)
+    this._preloadBatch(folder, entry, 0)
+    // If this folder backs the currently displayed mood, switch over.
+    if (moodFolder(el.app.dataset.mood) === folder && !this.playing) {
+      this.switchTo(folder)
     }
   },
 
   /** Recursively preload frames 20 at a time. */
-  _preloadBatch(mood, entry, start) {
+  _preloadBatch(folder, entry, start) {
     const batch = 20
-    const dir = this.dir(mood)
     const end = Math.min(start + batch, entry.manifest.frames)
     let pending = end - start
     if (pending === 0) return
@@ -151,29 +188,29 @@ const spriteAnim = {
         entry.loaded += 1
         pending -= 1
         if (pending === 0 && end < entry.manifest.frames) {
-          this._preloadBatch(mood, entry, end)
+          this._preloadBatch(folder, entry, end)
         }
       }
-      img.src = `/pet/assets/whale/${dir}/frame_${String(i).padStart(4, '0')}.png`
+      img.src = `/pet/${folder}/frame_${String(i).padStart(4, '0')}.png`
     }
   },
 
-  /** Whether a sprite set is loaded for this mood. */
-  has(mood) {
-    const set = this.sets.get(mood)
+  /** Whether a sprite set is loaded for this folder. */
+  has(folder) {
+    const set = this.sets.get(folder)
     return set !== undefined && set !== null
   },
 
   /**
-   * Switch the displayed animation to `mood`.  Stops whatever was playing
-   * and starts the new sequence from frame 0.  Does nothing when `mood` has
+   * Switch the displayed animation to `folder`.  Stops whatever was playing
+   * and starts the new sequence from frame 0.  Does nothing when `folder` has
    * no sprite set.
    */
-  switchTo(mood) {
+  switchTo(folder) {
     this.stop()
-    const set = this.sets.get(mood)
+    const set = this.sets.get(folder)
     if (set === undefined || set === null) return
-    this.current = mood
+    this.current = folder
     this.playing = true
     this.index = 0
     this.startTime = 0
@@ -306,7 +343,8 @@ function setMood(mood, durationMs) {
   el.app.dataset.mood = next
   // Switch to the sprite animation for this mood if available; SVG CSS
   // animations remain the fallback when the sprite folder is missing.
-  if (spriteAnim.has(next)) spriteAnim.switchTo(next)
+  const folder = moodFolder(next)
+  if (spriteAnim.has(folder)) spriteAnim.switchTo(folder)
   if (moodTimer !== null) clearTimeout(moodTimer)
   moodTimer = null
   if (typeof durationMs === 'number' && durationMs > 0) {
@@ -334,7 +372,6 @@ function setState(state, label) {
 
 let bubbleTimer = null
 let typewriter = null
-let lastSpoken = ''
 
 /**
  * Show text in the speech bubble, optionally typing it out.
@@ -345,7 +382,6 @@ let lastSpoken = ''
 function showBubble(text, meta = '', options = {}) {
   const value = String(text ?? '').trim()
   if (value.length === 0) return
-  lastSpoken = value
   el.bubble.hidden = false
   el.bubbleMeta.textContent = meta
   if (typewriter !== null) clearInterval(typewriter)
@@ -417,17 +453,181 @@ function pickVoice() {
     ?? null
 }
 
+// ── sound-effect voices ─────────────────────────────────────────────────────
+
+/** One reusable audio element for effect voices; recreated only if it breaks. */
+let effectAudio = null
+/** Path whose clip already failed, so the warning is shown once. */
+let effectBroken = ''
+
+/**
+ * Apply one sidebar catalogue entry to the live voice settings.
+ *
+ * An `effect` entry stops synthesizing replies and plays its clip instead; a
+ * `tts` entry restores synthesis with the named (substring-matched) voice.
+ * @param entry - a validated entry from the host's `voices` catalogue.
+ */
+function applyVoiceEntry(entry) {
+  voice.id = typeof entry.id === 'string' ? entry.id : ''
+  voice.kind = entry.kind === 'effect' ? 'effect' : 'tts'
+  voice.file = typeof entry.file === 'string' ? entry.file : ''
+  voice.name = typeof entry.voice === 'string' ? entry.voice : ''
+  voice.lang = typeof entry.lang === 'string' && entry.lang.length > 0 ? entry.lang : 'zh-CN'
+  // A new clip deserves a fresh attempt even if the previous one was missing.
+  effectBroken = ''
+  effectAudio = null
+  try {
+    globalThis.localStorage?.setItem(VOICE_KEY, voice.id)
+  } catch {
+    // A window with storage disabled simply does not remember the choice.
+  }
+}
+
+/**
+ * Report one unusable effect clip, once per path.
+ * @param path - the clip path from the config.
+ * @param reason - what the browser said.
+ */
+function reportEffectFailure(path, reason) {
+  if (effectBroken === path) return
+  effectBroken = path
+  showToast(`音效不可用：${path}（${reason}）——已回退到语音合成`)
+  report('error', `effect voice failed: ${path}: ${reason}`)
+}
+
+/**
+ * Play the selected effect clip once.
+ *
+ * Returns true when playback started, so the caller can skip synthesis.
+ * A missing or undecodable file reports itself and returns false, which makes
+ * the reply fall back to speech rather than going silent.
+ * @returns whether the clip took over.
+ */
+function playEffect() {
+  const path = typeof voice.file === 'string' ? voice.file.trim() : ''
+  if (path.length === 0) {
+    reportEffectFailure('（未配置）', 'config.yml 里这条声音没有 file')
+    return false
+  }
+  if (effectBroken === path) return false
+  try {
+    if (effectAudio === null) effectAudio = new Audio()
+    effectAudio.src = `/pet/${path.replace(/^\/+/u, '')}`
+    effectAudio.volume = Math.min(1, Math.max(0, voice.volume))
+    effectAudio.currentTime = 0
+    const previousState = el.app.dataset.state
+    effectAudio.onended = () => {
+      if (el.app.dataset.state === 'speaking') setState(previousState === 'speaking' ? 'idle' : previousState)
+    }
+    effectAudio.onerror = () => { reportEffectFailure(path, '加载失败') }
+    const started = effectAudio.play()
+    if (started !== undefined) {
+      started.then(() => {
+        setState('speaking', '播放音效')
+        // Reported so the host log shows that the clip (not speech) took over.
+        report('effect', path)
+      }).catch((error) => {
+        setState(previousState === 'speaking' ? 'idle' : previousState)
+        reportEffectFailure(path, String(error?.message ?? error))
+      })
+    }
+    return true
+  } catch (error) {
+    reportEffectFailure(path, String(error?.message ?? error))
+    return false
+  }
+}
+
 /** Queue one line for speech; ignores empty text and the muted state. */
 function speak(text) {
   const value = String(text ?? '').trim()
   if (value.length === 0) return
   if (!voice.enabled || voice.muted) return
+  // An effect voice replaces the reading entirely: every reply plays the clip.
+  // A clip that cannot play falls through to the configured engine below.
+  if (voice.kind === 'effect' && playEffect()) return
+  if (voice.engine === 'http') {
+    for (const line of chunkForProvider(value, voice.maxChars)) speechQueue.push(line)
+    if (!speaking) nextUtterance()
+    return
+  }
   if (!('speechSynthesis' in globalThis)) {
     showToast('此环境没有语音合成能力')
     return
   }
   speechQueue.push(value)
   if (!speaking) nextUtterance()
+}
+
+/**
+ * Split one line into provider-sized chunks.
+ *
+ * Replies already arrive pre-chunked, but `say` and notifications hand whole
+ * strings over; a TTS round trip per sentence keeps each request short and lets
+ * playback start before the rest has been synthesized.
+ * @param text - the line to split.
+ * @param maxChars - configured budget per request.
+ * @returns one or more non-empty chunks.
+ */
+function chunkForProvider(text, maxChars) {
+  const limit = Number.isFinite(maxChars) && maxChars >= 8 ? Math.floor(maxChars) : 240
+  const parts = String(text).split(/(?<=[。！？!?；;])\s*|\n+/u).filter(part => part.trim().length > 0)
+  const chunks = []
+  let current = ''
+  for (const part of parts) {
+    const piece = part.trim()
+    if (current.length > 0 && current.length + piece.length > limit) {
+      chunks.push(current)
+      current = ''
+    }
+    if (piece.length > limit) {
+      if (current.length > 0) {
+        chunks.push(current)
+        current = ''
+      }
+      for (let index = 0; index < piece.length; index += limit) chunks.push(piece.slice(index, index + limit))
+      continue
+    }
+    current = current.length === 0 ? piece : `${current}${piece}`
+  }
+  if (current.length > 0) chunks.push(current)
+  return chunks.length === 0 ? [String(text)] : chunks
+}
+
+/**
+ * Speak one line through the host's speech provider.
+ *
+ * The provider (and its credentials) live in the host process; the window only
+ * asks the bridge for a clip and plays it, so a key never reaches the page.
+ * @param line - the chunk to speak.
+ * @throws {Error} when the provider refuses or the returned audio cannot play.
+ */
+async function speakViaProvider(line) {
+  const response = await fetch(api('tts'), {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ text: line, voiceId: voice.id }),
+  })
+  if (!response.ok) {
+    const detail = await response.json().catch(() => undefined)
+    throw new Error(String(detail?.error ?? `HTTP ${response.status}`))
+  }
+  const blob = await response.blob()
+  const url = URL.createObjectURL(blob)
+  try {
+    const audio = new Audio(url)
+    audio.volume = Math.min(1, Math.max(0, voice.volume))
+    await audio.play()
+    // Reported so the host log (and the tests) can tell that a synthesized clip
+    // really played, rather than only seeing the failures.
+    report('tts', `${blob.size}B ${String(blob.type || 'audio')}`)
+    await new Promise((resolve, reject) => {
+      audio.onended = () => resolve()
+      audio.onerror = () => reject(new Error('音频无法播放'))
+    })
+  } finally {
+    URL.revokeObjectURL(url)
+  }
 }
 
 /** Speak the next queued line. */
@@ -439,6 +639,18 @@ function nextUtterance() {
     return
   }
   speaking = true
+  if (voice.engine === 'http') {
+    const previous = el.app.dataset.state
+    setState('speaking', '说话中')
+    speakViaProvider(line).catch((error) => {
+      report('error', `tts failed: ${String(error?.message ?? error)}`)
+      showToast(`语音合成失败：${String(error?.message ?? error)}`)
+    }).finally(() => {
+      setState(previous === 'speaking' ? 'idle' : previous)
+      nextUtterance()
+    })
+    return
+  }
   const utterance = new SpeechSynthesisUtterance(line)
   const picked = pickVoice()
   if (picked !== null) utterance.voice = picked
@@ -829,7 +1041,7 @@ function connect() {
 /** The Electron preload surface, when the window runs under Electron. */
 const windowApi = globalThis.whalePetWindow ?? null
 
-/** Apply one window command from the host or the menu. */
+/** Apply one window command from the host or a keyboard shortcut. */
 async function windowCommand(action) {
   if (windowApi === null) {
     showToast(`此窗口不支持「${action}」`)
@@ -858,10 +1070,138 @@ function toggleComposer(force) {
   if (next) el.input.focus()
 }
 
-/** Toggle the menu. */
-function toggleMenu(force) {
-  const next = typeof force === 'boolean' ? force : el.menu.hidden
-  el.menu.hidden = !next
+/** Toggle the sidebar. */
+function toggleSidebar(force) {
+  const next = typeof force === 'boolean' ? force : el.sidebar.hidden
+  el.sidebar.hidden = !next
+}
+
+/** Build the sidebar's action + voice buttons from the boot config. */
+function buildSidebar() {
+  el.sidebar.textContent = ''
+
+  const actions = document.createElement('section')
+  actions.className = 'sidebar__section'
+  const actionsTitle = document.createElement('h3')
+  actionsTitle.className = 'sidebar__title'
+  actionsTitle.textContent = '动作'
+  actions.append(actionsTitle)
+  for (const action of ACTIONS) {
+    const button = document.createElement('button')
+    button.type = 'button'
+    button.className = 'sidebar__button'
+    button.textContent = action.name
+    button.addEventListener('click', () => {
+      toggleSidebar(false)
+      // Play the sequence only — do not touch the SVG expression layer.
+      spriteAnim.switchTo(action.folder)
+      showToast(`播放动作：${action.name}`)
+    })
+    actions.append(button)
+  }
+  el.sidebar.append(actions)
+
+  const voices = document.createElement('section')
+  voices.className = 'sidebar__section'
+  const voicesTitle = document.createElement('h3')
+  voicesTitle.className = 'sidebar__title'
+  voicesTitle.textContent = '声音'
+  voices.append(voicesTitle)
+  if (VOICES.length === 0) {
+    const empty = document.createElement('p')
+    empty.className = 'sidebar__empty'
+    empty.textContent = '（未配置声音）'
+    voices.append(empty)
+  } else {
+    for (const entry of VOICES) {
+      const isEffect = entry.kind === 'effect'
+      const button = document.createElement('button')
+      button.type = 'button'
+      button.className = 'sidebar__button'
+      button.textContent = isEffect ? `${entry.name}（音效）` : entry.name
+      if (voice.id === entry.id) button.dataset.active = 'true'
+      button.addEventListener('click', () => {
+        toggleSidebar(false)
+        applyVoiceEntry(entry)
+        buildSidebar()
+        showToast(`已切换声音：${entry.name}`)
+        if (isEffect) {
+          // Preview the clip itself: that is what the replies will sound like.
+          if (!playEffect()) speak(entry.name)
+        } else {
+          speak(entry.name)
+        }
+      })
+      voices.append(button)
+    }
+  }
+  el.sidebar.append(voices)
+}
+
+/**
+ * Restore the voice the user picked in a previous window.
+ *
+ * The host config supplies the catalogue and its default; the choice itself is
+ * window-local, so it lives in localStorage and is only applied when it still
+ * names an entry in the current catalogue.
+ */
+function restoreVoiceChoice() {
+  let saved = ''
+  try {
+    saved = globalThis.localStorage?.getItem(VOICE_KEY) ?? ''
+  } catch {
+    saved = ''
+  }
+  if (saved.length === 0) return
+  const entry = VOICES.find(candidate => candidate.id === saved)
+  if (entry === undefined) return
+  applyVoiceEntry(entry)
+}
+
+// ── window dragging ─────────────────────────────────────────────────────────
+
+/** Left-button drag of the whale moves the window; a still press stays a click. */
+let dragState = null
+let suppressClick = false
+
+function initWindowDrag() {
+  const onMouseDown = (event) => {
+    if (event.button !== 0 || windowApi === null) return
+    dragState = {
+      startX: event.screenX,
+      startY: event.screenY,
+      lastX: event.screenX,
+      lastY: event.screenY,
+      moving: false,
+    }
+  }
+  const onMouseMove = (event) => {
+    if (dragState === null) return
+    const dx = event.screenX - dragState.startX
+    const dy = event.screenY - dragState.startY
+    if (!dragState.moving && Math.hypot(dx, dy) < 6) return
+    dragState.moving = true
+    const moveX = event.screenX - dragState.lastX
+    const moveY = event.screenY - dragState.lastY
+    dragState.lastX = event.screenX
+    dragState.lastY = event.screenY
+    void windowApi.moveBy(moveX, moveY)
+  }
+  const onMouseUp = () => {
+    if (dragState === null) return
+    const wasMoving = dragState.moving
+    dragState = null
+    if (wasMoving) {
+      // A drag must not also toggle the composer via the click event that follows.
+      suppressClick = true
+      setTimeout(() => { suppressClick = false }, 0)
+    }
+  }
+  for (const target of [el.character, el.eatToken]) {
+    target.addEventListener('mousedown', onMouseDown)
+  }
+  globalThis.addEventListener('mousemove', onMouseMove)
+  globalThis.addEventListener('mouseup', onMouseUp)
 }
 
 // ── wiring ──────────────────────────────────────────────────────────────────
@@ -877,38 +1217,18 @@ el.mic.addEventListener('click', () => {
 
 document.getElementById('stage').addEventListener('click', (event) => {
   if (event.button !== 0) return
-  toggleMenu(false)
+  if (suppressClick) return
+  toggleSidebar(false)
   toggleComposer()
 })
 
 document.getElementById('stage').addEventListener('contextmenu', (event) => {
   event.preventDefault()
-  toggleMenu()
-})
-
-el.menu.addEventListener('click', (event) => {
-  const action = event.target?.dataset?.action
-  if (typeof action !== 'string') return
-  toggleMenu(false)
-  switch (action) {
-    case 'composer': toggleComposer(true); break
-    case 'mute': {
-      voice.muted = !voice.muted
-      if (voice.muted) hush()
-      event.target.textContent = voice.muted ? '取消静音朗读' : '静音朗读'
-      showToast(voice.muted ? '朗读已静音' : '朗读已恢复')
-      break
-    }
-    case 'topmost': void windowCommand('toggle'); break
-    case 'speak-last': speak(lastSpoken); break
-    case 'hide': void windowCommand('hide'); break
-    case 'quit': void windowCommand('quit'); break
-    default: break
-  }
+  toggleSidebar()
 })
 
 document.addEventListener('click', (event) => {
-  if (!el.menu.hidden && !el.menu.contains(event.target)) toggleMenu(false)
+  if (!el.sidebar.hidden && !el.sidebar.contains(event.target)) toggleSidebar(false)
 })
 
 el.input.addEventListener('keydown', (event) => {
@@ -944,6 +1264,9 @@ async function main() {
   await mountCharacter()
   setState('idle')
   setMood('idle')
+  restoreVoiceChoice()
+  buildSidebar()
+  initWindowDrag()
   startIdleLife()
   void spriteAnim.warm()
   connect()

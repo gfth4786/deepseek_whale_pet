@@ -35,6 +35,28 @@
           startHidden: false
         voice:
           enabled: true
+          # browser: 用窗口自带的语音合成（系统装了什么音色就用什么）
+          # http:    改用一个 TTS 服务来念回复——「曼波音色」这类角色声音走这条
+          engine: browser
+          http:
+            # 端点，可含 {{text}}（会做 URL 编码）。留空时 engine 必须是 browser。
+            url: ''
+            method: POST
+            # 鉴权等自定义头，只留在宿主进程里，窗口看不到。
+            headers: {}
+            # POST 请求体模板；{{text}} 会被 JSON 转义后填入（引号由模板自己写）。
+            body: '{"text":"{{text}}"}'
+            # 响应里音频的位置：留空=响应体本身就是音频；
+            # 非空=按点号取值，例如 data.audio。
+            audioPath: ''
+            # audioPath 取到的值是 base64 字节，还是一个可下载的音频 URL。
+            audioEncoding: base64
+            # 服务返回的容器，窗口照原样播放：mp3 | wav | ogg | m4a | flac
+            format: mp3
+            timeoutMs: 30000
+            # 合成结果的内存缓存条数（按文本精确命中），0 关闭。
+            cacheEntries: 64
+          # 以下四项只对 browser 引擎生效
           lang: zh-CN
           voice: ''
           rate: 1.05
@@ -42,6 +64,8 @@
           volume: 1
           maxChars: 240
           speakReplies: true
+          # 想让某条音效（而不是 TTS）念所有回复：这里写相对 pet/ 的音频路径。
+          effectFile: ''
         asr:
           enabled: true
           lang: zh-CN

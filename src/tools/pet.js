@@ -123,7 +123,7 @@ export function petTools(deps) {
       },
       output: {
         schema: { type: 'object', additionalProperties: true },
-        render: (_args, value) => text(`桌宠窗口：${String(value?.action ?? '')} → 运行中=${String(value?.running === true)}, 连接数=${String(value?.clients ?? 0)}${value?.note === undefined ? '' : `（${String(value.note)}）`}`),
+        render: (_args, value) => text(`桌宠窗口：${String(value?.action ?? '')} → 运行中=${String(value?.running === true)}, 连接数=${String(value?.clients ?? 0)}${value?.note == null ? '' : `（${String(value.note)}）`}`),
       },
       async execute(args, exec) {
         const action = String(args?.action ?? '')
@@ -131,7 +131,9 @@ export function petTools(deps) {
         if (action !== 'status') {
           await requireApproval(ctx, config, 'window', `桌宠窗口操作（${action}）`, exec)
         }
-        let note
+        // Every branch must produce lossless JSON: an `undefined` field fails the
+        // registry's output validation, which is how a status call first broke.
+        let note = null
         if (action === 'restart') {
           await petProcess.stop()
           const pid = petProcess.start()
@@ -144,6 +146,7 @@ export function petTools(deps) {
             const pid = petProcess.start()
             note = pid === undefined ? '窗口已在运行' : `已启动 pid ${pid}`
           } else {
+            note = '已下发给窗口'
             publish('window', { action })
           }
         }

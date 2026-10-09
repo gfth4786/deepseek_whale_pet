@@ -47,6 +47,11 @@ const MIME = Object.freeze({
   '.woff2': 'font/woff2',
   '.wav': 'audio/wav',
   '.mp3': 'audio/mpeg',
+  '.ogg': 'audio/ogg',
+  '.oga': 'audio/ogg',
+  '.opus': 'audio/ogg',
+  '.m4a': 'audio/mp4',
+  '.flac': 'audio/flac',
 })
 
 /** Largest request body the bridge accepts, in bytes (audio recordings). */
@@ -77,6 +82,7 @@ export class PetBridge {
    * @param options.onMessage - receives `{ text, source }` from the pet.
    * @param options.onClientEvent - receives `{ type, ... }` lifecycle events.
    * @param options.onAsr - receives raw audio bytes, returns a transcript.
+   * @param options.onTts - receives `{ text }`, returns one synthesized clip.
    * @param options.snapshot - returns the current snapshot for `GET /api/state`.
    * @param options.log - debug log sink.
    */
@@ -87,6 +93,7 @@ export class PetBridge {
     this.onMessage = options.onMessage
     this.onClientEvent = options.onClientEvent ?? (() => {})
     this.onAsr = options.onAsr
+    this.onTts = options.onTts
     this.snapshot = options.snapshot ?? (() => ({}))
     this.log = options.log ?? (() => {})
   }
@@ -310,6 +317,30 @@ export class PetBridge {
       if (parsed === undefined) return this.#json(res, 400, { ok: false, error: 'invalid JSON body' })
       this.onClientEvent(parsed)
       return this.#json(res, 200, { ok: true, value: { accepted: true } })
+    }
+    if (path === '/api/tts' && req.method === 'POST') {
+      if (this.onTts === undefined) {
+        return this.#json(res, 200, { ok: false, error: 'speech synthesis is not available in this deployment' })
+      }
+      const body = await this.#body(req, res)
+      if (body === undefined) return
+      const parsed = parseJson(body)
+      const text = typeof parsed?.text === 'string' ? parsed.text.trim() : ''
+      if (text.length === 0) return this.#json(res, 400, { ok: false, error: 'text is required' })
+      try {
+        const clip = await this.onTts({ text })
+        // This endpoint answers with audio, not an envelope: the window plays the
+        // body directly, and a failure is an HTTP status it can branch on.
+        res.writeHead(200, {
+          'content-type': clip.contentType,
+          'content-length': clip.audio.length,
+          'cache-control': 'no-store',
+        })
+        res.end(clip.audio)
+      } catch (error) {
+        this.#json(res, 502, { ok: false, error: String(error?.message ?? error) })
+      }
+      return
     }
     if (path === '/api/asr' && req.method === 'POST') {
       if (this.onAsr === undefined) {

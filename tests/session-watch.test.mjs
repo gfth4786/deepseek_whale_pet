@@ -182,6 +182,29 @@ test('the snapshot describes the session and the voice settings', () => {
   assert.equal(typeof snapshot.now, 'string')
 })
 
+test('the snapshot carries everything the window needs to pick a voice', () => {
+  // The window cannot read the plugin config; these four fields are the whole
+  // contract behind `voice.engine: http` and `voice.effectFile`.
+  const config = resolveConfig({
+    voice: {
+      engine: 'http',
+      effectFile: 'assets/audio/x.wav',
+      maxChars: 120,
+      http: { url: 'http://127.0.0.1:9880/' },
+    },
+  }, {})
+  const voice = harness({ config }).watcher.snapshot().voice
+  assert.equal(voice.engine, 'http')
+  assert.equal(voice.effectFile, 'assets/audio/x.wav')
+  assert.equal(voice.maxChars, 120)
+  assert.equal(voice.enabled, true)
+  // Defaults stay put when the deployment configures nothing.
+  const plain = harness({}).watcher.snapshot().voice
+  assert.equal(plain.engine, 'browser')
+  assert.equal(plain.effectFile, '')
+  assert.equal(typeof plain.maxChars, 'number')
+})
+
 test('tool labels are bounded', () => {
   assert.equal(toolLabel('pwsh'), 'pwsh')
   assert.equal(toolLabel('').length, 4)

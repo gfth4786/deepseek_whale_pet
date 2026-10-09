@@ -28,6 +28,8 @@ export const PID_FILE = join(tmpdir(), 'dsh-whale-pet.pid')
 export class PetProcess {
   #child
   #startedAt
+  /** The pid this instance wrote to the pid file, and may therefore kill. */
+  #writtenPid
 
   /**
    * @param options - launcher selection, url, and logging.
@@ -77,16 +79,18 @@ export class PetProcess {
     })
     child.on('exit', (code, signal) => {
       this.log(`pet window exited (code ${String(code)}, signal ${String(signal)})`)
-      this.#child = undefined
-      this.#startedAt = undefined
-      try {
-        rmSync(PID_FILE, { force: true })
-      } catch {
-        // A missing or locked pid file never blocks shutdown.
+      // Only retract the pid file while it still names this child: a plugin
+      // reload can start a replacement window before this handler runs.
+      if (this.#child === child) this.#child = undefined
+      if (this.#writtenPid === child.pid) {
+        this.#writtenPid = undefined
+        this.#startedAt = undefined
+        removePidFileIfOwned(child.pid)
       }
       this.onExit(code)
     })
     this.#child = child
+    this.#writtenPid = child.pid
     this.#startedAt = Date.now()
     try {
       writeFileSync(PID_FILE, String(child.pid ?? ''), 'utf8')
@@ -97,19 +101,22 @@ export class PetProcess {
   }
 
   /**
-   * Stop the window process tree.
+   * Stop the window process tree this instance started.
+   *
+   * Only a pid this instance wrote down is ever killed. Falling back to "whoever
+   * is named in the pid file" looked harmless and was not: a plugin reload
+   * disposes the old instance while the new one is already starting a
+   * replacement window, and the stale read then killed the fresh window. The
+   * same ownership rule guards deleting the file.
    * @returns completion once the child has been signalled.
    */
   async stop() {
     const child = this.#child
+    const pid = child?.pid ?? this.#writtenPid
     this.#child = undefined
     this.#startedAt = undefined
-    const pid = child?.pid ?? readStalePid()
-    try {
-      rmSync(PID_FILE, { force: true })
-    } catch {
-      // Ignore: the pid file is advisory.
-    }
+    this.#writtenPid = undefined
+    removePidFileIfOwned(pid)
     if (pid === undefined) return
     if (process.platform === 'win32') {
       // The launcher owns the Electron/Chromium process, so the whole tree goes.
@@ -149,5 +156,19 @@ export function readStalePid() {
     return Number.isInteger(pid) && pid > 0 ? pid : undefined
   } catch {
     return undefined
+  }
+}
+
+/**
+ * Delete the pid file only while it still names the pid this instance owns.
+ * @param pid - the pid this instance wrote, or undefined.
+ */
+function removePidFileIfOwned(pid) {
+  if (pid === undefined) return
+  try {
+    if (readStalePid() !== pid) return
+    rmSync(PID_FILE, { force: true })
+  } catch {
+    // The pid file is advisory; a locked or missing file never blocks shutdown.
   }
 }

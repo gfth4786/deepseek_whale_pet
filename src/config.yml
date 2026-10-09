@@ -1,0 +1,60 @@
+# 桌宠右键侧边栏的「动作」与「声音」配置
+#
+# 本项目零运行时依赖，这里只支持一个固定的 YAML 子集，请照下面的写法改：
+#   - `#` 开头的一整行是注释；
+#   - 顶层只能有 `actions:` 与 `voices:` 两个段；
+#   - 每条以 `- id: xxx` 开头，随后是缩进的键值对；
+#   - 值用纯文本即可（可加引号，也可不加），支持中文。
+
+# 动作：folder 是图片序列目录（相对 pet/ 根，即 assets/whale/<目录>）。
+actions:
+  - id: eat_token
+    name: 吃 token
+    folder: assets/whale/eat_token
+  - id: working
+    name: 干活
+    folder: assets/whale/working
+  - id: idle
+    name: 发呆
+    folder: assets/whale/idle
+  - id: happy
+    name: 开心
+    folder: assets/whale/happy
+  - id: sleepy
+    name: 困了
+    folder: assets/whale/sleepy
+  - id: surprised
+    name: 惊讶
+    folder: assets/whale/surprised
+
+# 声音：侧边栏「声音」里的一项。三种写法——
+#
+#   1) 默认（kind 省略或 kind: tts）—— 用窗口自带的语音合成。voice 是语音名的子串
+#      （可留空表示"用 lang 匹配到的任意语音"），lang 可选（默认 zh-CN）。
+#      **当插件配置里 voice.engine 设为 http 时，这一条的音色由那个 TTS 服务决定**，
+#      侧栏点它只是标记"用曼波"。
+#
+#   2) kind: effect —— 音效。选中后**不再朗读文字**，而是每条 AI 回复播放一次这个音频文件。
+#      file 相对 pet/ 根；把音频丢进 pet/assets/audio/ 即可（mp3/wav/ogg/m4a 都能播）。
+#      文件缺失或解码失败时会提示一次并自动回退到 TTS，不会变哑巴。
+#
+#   3) 想同时挂多种音色：多加几条，侧栏随时切换。
+#
+voices:
+  # 曼波：音色由 voice.engine 决定
+  #   - 默认（browser）：找一个系统里名字含"曼波"的语音；没有就退回中文默认音色
+  #   - 配置成 http：由 voice.http 指向的服务（Fish Audio / GPT-SoVITS / Bert-VITS2 …）朗读
+  - id: mambo
+    name: 曼波
+    voice: 曼波
+    lang: zh-CN
+  # 例：固定音效（需要有音频文件）
+  # - id: mambo-clip
+  #   name: 曼波（音效）
+  #   kind: effect
+  #   file: assets/audio/manbo.mp3
+  # 例：再挂一个普通语音合成音色
+  # - id: huihui
+  #   name: 慧慧（系统女声）
+  #   voice: Huihui
+  #   lang: zh-CN

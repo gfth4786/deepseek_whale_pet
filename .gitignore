@@ -3,6 +3,9 @@ node_modules/
 .electron-cache/
 *.log
 
+# Local 曼波 TTS setup: downloaded engine/release artifacts and probe audio.
+.setup/
+
 # Test and self-test artifacts (the shipped window screenshot is committed on
 # purpose: the README links to it).
 tests/artifacts/*

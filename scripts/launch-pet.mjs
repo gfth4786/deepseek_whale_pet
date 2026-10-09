@@ -133,15 +133,30 @@ function cornerArgs(spec, screen) {
   }
 }
 
-/** Launch Electron and stay alive as its supervisor. */
+/**
+ * Launch Electron and stay alive as its supervisor.
+ *
+ * `--user-data-dir=<path>` is forwarded as a Chromium switch placed *before* the
+ * app path. The window takes a single-instance lock on its user-data directory,
+ * which is what keeps a normal desktop to one pet — but it also means a second
+ * launch (the selftest, a test) would silently quit while the real window is
+ * running. Passing a private directory is how those runs get their own window.
+ * @param executable - the Electron binary.
+ * @param argv - window arguments, already including any `--user-data-dir`.
+ * @param selftest - whether to inherit stdio so the JSON report reaches the caller.
+ * @returns the spawned child process.
+ */
 function runElectron(executable, argv, selftest) {
-  const child = spawn(executable, [MAIN, ...argv], {
+  const profileArg = argv.find(argument => argument.startsWith('--user-data-dir='))
+  const child = spawn(executable, [
+    ...(profileArg === undefined ? [] : [profileArg]),
+    MAIN,
+    ...argv.filter(argument => argument !== profileArg),
+  ], {
     // Inheriting stdio while testing lets the JSON report reach the caller;
     // a normal launch stays quiet. A deployment can opt into the window's
     // console output with DSH_WHALE_PET_WINDOW_DEBUG=1.
     stdio: selftest || process.env.DSH_WHALE_PET_WINDOW_DEBUG === '1' ? 'inherit' : 'ignore',
-    // Electron needs a writable user-data dir; keeping it inside the OS temp
-    // area avoids polluting the package and works from a read-only install.
     env: { ...process.env, ELECTRON_DISABLE_SECURITY_WARNINGS: '1' },
     windowsHide: false,
   })
@@ -223,7 +238,7 @@ async function main() {
   const args = parseArgs(process.argv.slice(2))
   const url = typeof args.url === 'string' ? args.url : ''
   if (url.length === 0) {
-    process.stderr.write('usage: node scripts/launch-pet.mjs --url=<pet url> [--selftest] [--shot=<path>]\n')
+    process.stderr.write('usage: node scripts/launch-pet.mjs --url=<pet url> [--selftest] [--shot=<path>] [--user-data-dir=<path>]\n')
     process.exitCode = 2
     return
   }
@@ -232,6 +247,11 @@ async function main() {
   const argv = [`--url=${url}`]
   if (args.hidden === true) argv.push('--hidden')
   if (args['no-topmost'] === true) argv.push('--no-topmost')
+  // A private profile directory is how a test window avoids the running pet's
+  // single-instance lock (see runElectron).
+  if (typeof args['user-data-dir'] === 'string' && args['user-data-dir'].length > 0) {
+    argv.push(`--user-data-dir=${args['user-data-dir']}`)
+  }
   if (selftest) {
     argv.push('--selftest')
     if (typeof args.shot === 'string') argv.push(`--shot=${args.shot}`)

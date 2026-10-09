@@ -20,10 +20,12 @@
  */
 
 import { resolveConfig } from './src/config.js'
+import { loadPetConfig } from './src/pet-config.js'
 import { PetBridge } from './src/bridge.js'
 import { SessionWatcher } from './src/session-watch.js'
 import { PetProcess } from './src/pet-process.js'
 import { WINDOWS_POWERSHELL, runHelper } from './src/win32/run.js'
+import { TtsCache, synthesize } from './src/tts.js'
 import { pcTools } from './src/tools/pc.js'
 import { petTools } from './src/tools/pet.js'
 
@@ -50,16 +52,34 @@ export async function apply(ctx, rawConfig) {
     return
   }
 
+  // The right-click sidebar's action + voice catalogue, from src/config.yml.
+  const petConfig = await loadPetConfig(log)
+
   const watcher = new SessionWatcher({ ctx, config, bridge: undefined, log })
+  // Synthesized clips repeat (a retried turn, a re-read line), and the round trip
+  // is the slowest part of speaking, so successful clips are kept.
+  const ttsCache = new TtsCache(config.voice.http.cacheEntries)
   const bridge = new PetBridge({
     host: config.host,
     port: config.port,
     token: config.token,
     log,
-    snapshot: () => ({ ...watcher.snapshot(), clients: bridge.clientCount }),
+    snapshot: () => ({
+      ...watcher.snapshot(),
+      actions: petConfig.actions,
+      voices: petConfig.voices,
+      clients: bridge.clientCount,
+    }),
     onMessage: ({ text, source }) => watcher.sendUserText(text, source),
     onClientEvent: (event) => onClientEvent(event, log),
     onAsr: async ({ audio, lang }) => transcribe({ audio, lang, config, log }),
+    onTts: async ({ text }) => {
+      const cached = ttsCache.get(text)
+      if (cached !== undefined) return cached
+      const clip = await synthesize({ text, http: config.voice.http, log })
+      ttsCache.set(text, clip)
+      return clip
+    },
   })
   watcher.bridge = bridge
 

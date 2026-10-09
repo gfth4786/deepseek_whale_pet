@@ -229,6 +229,15 @@ ipcMain.handle('pet:resize', (_event, size) => {
   mainWindow?.setBounds({ ...mainWindow.getBounds(), width, height })
   return { width, height }
 })
+ipcMain.on('pet:move-by', (_event, dx, dy) => {
+  if (mainWindow === null) return
+  const ox = Number(dx)
+  const oy = Number(dy)
+  if (!Number.isFinite(ox) || !Number.isFinite(oy)) return
+  const [x, y] = mainWindow.getPosition()
+  mainWindow.setPosition(x + Math.round(ox), y + Math.round(oy))
+})
+
 ipcMain.handle('pet:log', (_event, message) => {
   process.stdout.write(`[whale-pet window] ${String(message)}\n`)
 })

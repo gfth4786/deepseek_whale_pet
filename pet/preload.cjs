@@ -24,6 +24,8 @@ contextBridge.exposeInMainWorld('whalePetWindow', {
   setTopmost: value => ipcRenderer.invoke('pet:set-topmost', value === true),
   /** Resize the window, clamped by the main process. */
   resize: size => ipcRenderer.invoke('pet:resize', size),
+  /** Move the window by a screen delta (drag-to-move; fire-and-forget). */
+  moveBy: (dx, dy) => ipcRenderer.send('pet:move-by', dx, dy),
   /** Write one diagnostic line into the host log. */
   log: message => ipcRenderer.invoke('pet:log', String(message)),
 })
